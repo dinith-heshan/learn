@@ -1,0 +1,13 @@
+{
+  "concepts": [
+    {
+      "slug": "dram-row-buffer",
+      "title": "DRAM Row Buffer",
+      "tags": ["memory", "hardware", "performance"],
+      "summary": "Reading a DRAM cell destroys it, so a whole row is latched into a buffer. Access cost depends on history.",
+      "learned": "2026-08-14",
+      "reviewed": "2026-08-14",
+      "confidence": "exploring"
+    }
+  ]
+}
