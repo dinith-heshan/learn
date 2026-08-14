@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>learn — Dinith Heshan</title>
+<meta name="description" content="Interactive pages for concepts I'm learning. Notes written while figuring things out, not tutorials written after.">
+<meta property="og:title" content="learn — Dinith Heshan">
+<meta property="og:description" content="Interactive pages for concepts I'm learning. Notes written while figuring things out, not tutorials written after.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://dinith-heshan.github.io/learn/">
+<meta property="og:image" content="https://dinith-heshan.github.io/learn/assets/og-default.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%232f6157'/><rect x='7' y='13' width='18' height='2.6' rx='1.3' fill='%23faf8f3'/><rect x='7' y='19' width='11' height='2.6' rx='1.3' fill='%23faf8f3' opacity='.55'/></svg>">
+
+<style>
+  :root {
+    --bg:      #faf8f3;
+    --ink:     #23211d;
+    --muted:   #6f6a60;
+    --faint:   #948f83;
+    --rule:    #e5e0d3;
+    --accent:  #2f6157;
+    --warn:    #a8721c;
+
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 40px 22px 80px;
+  }
+
+  a { color: inherit; }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  /* ---------- masthead ---------- */
+
+  .masthead {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .wordmark {
+    font-family: var(--mono);
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin: 0;
+  }
+
+  .wordmark .slash { color: var(--accent); }
+
+  .repo-link {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--muted);
+    text-decoration: none;
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 1px;
+  }
+
+  .repo-link:hover { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .tagline {
+    margin: 10px 0 0;
+    color: var(--muted);
+    font-size: 15px;
+    max-width: 52ch;
+  }
+
+  .state {
+    margin: 22px 0 0;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--faint);
+    letter-spacing: 0.01em;
+  }
+
+  .state button {
+    font: inherit;
+    color: var(--warn);
+    background: none;
+    border: none;
+    border-bottom: 1px dotted currentColor;
+    padding: 0;
+    cursor: pointer;
+  }
+
+  .state button:hover { color: var(--ink); }
+
+  /* ---------- controls ---------- */
+
+  .controls {
+    margin-top: 26px;
+    padding-top: 22px;
+    border-top: 1px solid var(--rule);
+  }
+
+  .search-shell { position: relative; }
+
+  .search-shell input {
+    width: 100%;
+    font-family: var(--sans);
+    font-size: 15px;
+    color: var(--ink);
+    background: transparent;
+    border: 1px solid var(--rule);
+    border-radius: 7px;
+    padding: 11px 52px 11px 14px;
+  }
+
+  .search-shell input::placeholder { color: var(--faint); }
+  .search-shell input:focus { border-color: var(--accent); outline: none; }
+
+  .slash-hint {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--faint);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 1px 6px;
+    pointer-events: none;
+  }
+
+  .search-shell input:focus ~ .slash-hint { opacity: 0; }
+
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 7px;
+    margin-top: 14px;
+  }
+
+  .chip {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+    background: transparent;
+    border: 1px solid var(--rule);
+    border-radius: 20px;
+    padding: 3px 11px;
+    cursor: pointer;
+    transition: color .12s, border-color .12s;
+  }
+
+  .chip:hover { color: var(--ink); border-color: var(--faint); }
+
+  .chip[aria-pressed="true"] {
+    color: var(--bg);
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .sorts {
+    margin-left: auto;
+    display: flex;
+    gap: 4px;
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+
+  .sorts button {
+    font: inherit;
+    color: var(--faint);
+    background: none;
+    border: none;
+    padding: 3px 2px;
+    cursor: pointer;
+  }
+
+  .sorts button:hover { color: var(--ink); }
+  .sorts button[aria-pressed="true"] { color: var(--ink); border-bottom: 1.5px solid var(--accent); }
+  .sorts .sep { color: var(--rule); align-self: center; }
+
+  /* ---------- list ---------- */
+
+  .list { list-style: none; margin: 0; padding: 0; }
+
+  .list li { border-bottom: 1px solid var(--rule); }
+
+  .row {
+    display: grid;
+    grid-template-columns: 46px 1fr;
+    gap: 18px;
+    padding: 20px 8px 20px 0;
+    text-decoration: none;
+    transition: background .12s;
+  }
+
+  .row:hover { background: rgba(47, 97, 87, 0.045); }
+
+  .meter {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding-top: 7px;
+  }
+
+  .seg {
+    height: 4px;
+    border-radius: 2px;
+    background: var(--rule);
+  }
+
+  .seg.on { background: var(--accent); }
+  .row.stale .seg.on { background: var(--warn); }
+
+  .row-title {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .row:hover .row-title { color: var(--accent); }
+
+  .row-summary {
+    margin: 3px 0 0;
+    color: var(--muted);
+    font-size: 14.5px;
+  }
+
+  .row-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 9px;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--faint);
+  }
+
+  .conf {
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 1px 6px;
+    letter-spacing: 0.03em;
+  }
+
+  .conf[data-level="working"] { color: var(--muted); border-color: var(--faint); }
+  .conf[data-level="solid"]   { color: var(--bg); background: var(--accent); border-color: var(--accent); }
+
+  .row.stale .age { color: var(--warn); }
+
+  .dot { color: var(--rule); }
+
+  /* ---------- states ---------- */
+
+  .msg {
+    padding: 44px 0;
+    color: var(--muted);
+    font-size: 15px;
+  }
+
+  .msg strong { display: block; color: var(--ink); font-size: 16px; margin-bottom: 7px; }
+
+  .msg code {
+    font-family: var(--mono);
+    font-size: 13px;
+    background: rgba(35, 33, 29, 0.05);
+    border-radius: 4px;
+    padding: 1px 5px;
+  }
+
+  /* ---------- footnote ---------- */
+
+  .footnote {
+    margin-top: 44px;
+    padding-top: 20px;
+    border-top: 1px solid var(--rule);
+    font-size: 13px;
+    color: var(--faint);
+    max-width: 56ch;
+  }
+
+  .footnote p { margin: 0 0 8px; }
+  .footnote p:last-child { margin-bottom: 0; }
+
+  /* ---------- motion ---------- */
+
+  .list li {
+    animation: rise .34s cubic-bezier(.22,.8,.3,1) backwards;
+  }
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(7px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+
+  @media (max-width: 560px) {
+    .wrap { padding: 30px 18px 60px; }
+    .wordmark { font-size: 23px; }
+    .row { grid-template-columns: 34px 1fr; gap: 14px; }
+    .sorts { margin-left: 0; width: 100%; }
+    .slash-hint { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <h1 class="wordmark">learn<span class="slash">/</span></h1>
+    <a class="repo-link" href="https://github.com/dinith-heshan/learn">github.com/dinith-heshan/learn</a>
+  </header>
+  <p class="tagline">Interactive pages for concepts I'm learning. Written while figuring them out, so they may contain errors.</p>
+  <p class="state" id="state"></p>
+
+  <div class="controls">
+    <div class="search-shell">
+      <label for="q" hidden>Search concepts</label>
+      <input id="q" type="search" placeholder="Search titles, summaries, tags" autocomplete="off" spellcheck="false">
+      <span class="slash-hint">/</span>
+    </div>
+    <div class="filters">
+      <div id="tags" class="filters" style="margin:0;gap:7px"></div>
+      <div class="sorts">
+        <button id="sort-recent" aria-pressed="true">recent</button>
+        <span class="sep">·</span>
+        <button id="sort-review" aria-pressed="false">needs review</button>
+      </div>
+    </div>
+  </div>
+
+  <ul class="list" id="list"></ul>
+  <div class="msg" id="msg" hidden></div>
+
+  <footer class="footnote">
+    <p>The bar on each entry estimates how much of a concept is still in my head, from time since last review and how well I understood it. It's a nudge to revisit things, not a measurement.</p>
+    <p>Spotted something wrong? <a href="https://github.com/dinith-heshan/learn/issues/new?labels=correction">Open an issue</a>.</p>
+  </footer>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var HALF_LIFE = { exploring: 14, working: 45, solid: 120 };
+  var DAY = 86400000;
+
+  var state = { q: "", tag: null, sort: "recent" };
+  var concepts = [];
+
+  var $list  = document.getElementById("list");
+  var $msg   = document.getElementById("msg");
+  var $state = document.getElementById("state");
+  var $q     = document.getElementById("q");
+  var $tags  = document.getElementById("tags");
+
+  function daysSince(iso) {
+    var t = Date.parse(iso);
+    if (isNaN(t)) return null;
+    return Math.max(0, Math.floor((Date.now() - t) / DAY));
+  }
+
+  function retention(c) {
+    var d = daysSince(c.reviewed || c.learned);
+    if (d === null) return 1;
+    var h = HALF_LIFE[c.confidence] || HALF_LIFE.working;
+    return Math.pow(0.5, d / h);
+  }
+
+  function segments(r) {
+    return Math.max(0, Math.min(5, Math.round(r * 5)));
+  }
+
+  function needsReview(c) {
+    return retention(c) < 0.5;
+  }
+
+  function ageLabel(iso) {
+    var d = daysSince(iso);
+    if (d === null) return "";
+    if (d === 0) return "reviewed today";
+    if (d === 1) return "reviewed yesterday";
+    if (d < 30) return "reviewed " + d + "d ago";
+    if (d < 365) return "reviewed " + Math.round(d / 30) + "mo ago";
+    var y = (d / 365).toFixed(1).replace(/\.0$/, "");
+    return "reviewed " + y + "y ago";
+  }
+
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (m) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m];
+    });
+  }
+
+  function matches(c) {
+    if (state.tag && (c.tags || []).indexOf(state.tag) === -1) return false;
+    if (!state.q) return true;
+    var hay = [c.title, c.summary, (c.tags || []).join(" ")].join(" ").toLowerCase();
+    return state.q.toLowerCase().split(/\s+/).every(function (w) {
+      return hay.indexOf(w) !== -1;
+    });
+  }
+
+  function showMessage(title, body) {
+    $list.innerHTML = "";
+    $msg.hidden = false;
+    $msg.innerHTML = "<strong>" + title + "</strong>" + body;
+  }
+
+  function renderTags() {
+    var counts = {};
+    concepts.forEach(function (c) {
+      (c.tags || []).forEach(function (t) { counts[t] = (counts[t] || 0) + 1; });
+    });
+    var names = Object.keys(counts).sort(function (a, b) {
+      return counts[b] - counts[a] || a.localeCompare(b);
+    });
+    $tags.innerHTML = "";
+    names.forEach(function (t) {
+      var b = document.createElement("button");
+      b.className = "chip";
+      b.textContent = t;
+      b.setAttribute("aria-pressed", String(state.tag === t));
+      b.addEventListener("click", function () {
+        state.tag = state.tag === t ? null : t;
+        renderTags();
+        render();
+      });
+      $tags.appendChild(b);
+    });
+  }
+
+  function render() {
+    var items = concepts.filter(matches);
+
+    items.sort(function (a, b) {
+      if (state.sort === "review") return retention(a) - retention(b);
+      return String(b.learned || "").localeCompare(String(a.learned || ""));
+    });
+
+    var due = concepts.filter(needsReview).length;
+    $state.innerHTML = concepts.length === 0
+      ? ""
+      : concepts.length + (concepts.length === 1 ? " concept" : " concepts")
+        + (due ? ' <span class="dot">·</span> <button id="due">' + due + " need review</button>" : "");
+
+    var dueBtn = document.getElementById("due");
+    if (dueBtn) {
+      dueBtn.addEventListener("click", function () {
+        setSort("review");
+      });
+    }
+
+    if (concepts.length === 0) {
+      showMessage("No concepts yet.",
+        "The first one goes in <code>concepts.json</code>, with its page at <code>concepts/&lt;slug&gt;/index.html</code>.");
+      return;
+    }
+
+    if (items.length === 0) {
+      showMessage("Nothing matches.", "Try a shorter search, or clear the tag filter.");
+      return;
+    }
+
+    $msg.hidden = true;
+    $list.innerHTML = items.map(function (c, i) {
+      var r = retention(c);
+      var on = segments(r);
+      var stale = r < 0.5;
+      var segs = "";
+      for (var s = 0; s < 5; s++) segs += '<span class="seg' + (s < on ? " on" : "") + '"></span>';
+
+      var tags = (c.tags || []).map(function (t) { return esc(t); }).join(' <span class="dot">·</span> ');
+      var conf = esc(c.confidence || "exploring");
+
+      return '<li style="animation-delay:' + Math.min(i * 22, 260) + 'ms">'
+        + '<a class="row' + (stale ? " stale" : "") + '" href="concepts/' + encodeURIComponent(c.slug) + '/">'
+        + '<span class="meter" aria-hidden="true">' + segs + '</span>'
+        + '<span>'
+        + '<h2 class="row-title">' + esc(c.title) + '</h2>'
+        + (c.summary ? '<p class="row-summary">' + esc(c.summary) + '</p>' : '')
+        + '<span class="row-meta">'
+        + '<span class="conf" data-level="' + conf + '">' + conf + '</span>'
+        + (tags ? '<span>' + tags + '</span> <span class="dot">·</span>' : '')
+        + '<span class="age">' + esc(ageLabel(c.reviewed || c.learned)) + '</span>'
+        + '</span></span></a></li>';
+    }).join("");
+  }
+
+  function setSort(mode) {
+    state.sort = mode;
+    document.getElementById("sort-recent").setAttribute("aria-pressed", String(mode === "recent"));
+    document.getElementById("sort-review").setAttribute("aria-pressed", String(mode === "review"));
+    render();
+  }
+
+  document.getElementById("sort-recent").addEventListener("click", function () { setSort("recent"); });
+  document.getElementById("sort-review").addEventListener("click", function () { setSort("review"); });
+
+  $q.addEventListener("input", function () {
+    state.q = $q.value.trim();
+    render();
+  });
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "/" && document.activeElement !== $q) {
+      e.preventDefault();
+      $q.focus();
+    }
+    if (e.key === "Escape" && document.activeElement === $q) {
+      $q.value = "";
+      state.q = "";
+      render();
+      $q.blur();
+    }
+  });
+
+  fetch("concepts.json", { cache: "no-cache" })
+    .then(function (r) {
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    })
+    .then(function (data) {
+      concepts = (data && data.concepts) || [];
+      renderTags();
+      render();
+    })
+    .catch(function () {
+      showMessage("Couldn't load concepts.json.",
+        "This page reads its list over the network, so opening the file directly from disk won't work. "
+        + "View it on GitHub Pages, or run <code>python3 -m http.server</code> in the repo folder and open "
+        + "<code>localhost:8000</code>.");
+    });
+})();
+</script>
+</body>
+</html>
