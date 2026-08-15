@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>learn — Dinith Heshan</title>
-<meta name="description" content="Interactive pages for concepts I'm learning. Notes written while figuring things out, not tutorials written after.">
+<meta name="description" content="Interactive pages for concepts in computer science and software engineering.">
 <meta property="og:title" content="learn — Dinith Heshan">
-<meta property="og:description" content="Interactive pages for concepts I'm learning. Notes written while figuring things out, not tutorials written after.">
+<meta property="og:description" content="Interactive pages for concepts in computer science and software engineering.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://dinith-heshan.github.io/learn/">
 <meta property="og:image" content="https://dinith-heshan.github.io/learn/assets/og-default.png">
@@ -15,20 +15,21 @@
 
 <style>
   :root {
-    --bg:      #faf8f3;
-    --ink:     #23211d;
-    --muted:   #6f6a60;
-    --faint:   #948f83;
-    --rule:    #e5e0d3;
-    --accent:  #2f6157;
-    --warn:    #a8721c;
+    --bg:    #faf8f3;
+    --ink:   #23211d;
+    --muted: #6f6a60;
+    --faint: #948f83;
+    --rule:  #e5e0d3;
 
-    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    --c1: #2f6157;
+    --c2: #a8721c;
+    --c3: #3f5d7d;
+
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
     --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   }
 
   * { box-sizing: border-box; }
-
   html { -webkit-text-size-adjust: 100%; }
 
   body {
@@ -41,16 +42,14 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  .wrap {
-    max-width: 760px;
+  .page {
+    max-width: 880px;
     margin: 0 auto;
-    padding: 40px 22px 80px;
+    padding: 44px 40px 80px;
   }
 
-  a { color: inherit; }
-
   :focus-visible {
-    outline: 2px solid var(--accent);
+    outline: 2px solid var(--c1);
     outline-offset: 3px;
     border-radius: 2px;
   }
@@ -66,16 +65,16 @@
   }
 
   .wordmark {
+    margin: 0;
     font-family: var(--mono);
-    font-size: 26px;
+    font-size: 27px;
     font-weight: 600;
     letter-spacing: -0.02em;
-    margin: 0;
   }
 
-  .wordmark .slash { color: var(--accent); }
+  .wordmark .slash { color: var(--c1); }
 
-  .repo-link {
+  .repo {
     font-family: var(--mono);
     font-size: 12.5px;
     color: var(--muted);
@@ -84,47 +83,29 @@
     padding-bottom: 1px;
   }
 
-  .repo-link:hover { color: var(--accent); border-bottom-color: var(--accent); }
+  .repo:hover { color: var(--c1); border-bottom-color: var(--c1); }
 
   .tagline {
     margin: 10px 0 0;
+    max-width: 54ch;
     color: var(--muted);
     font-size: 15px;
-    max-width: 52ch;
   }
 
-  .state {
-    margin: 22px 0 0;
-    font-family: var(--mono);
-    font-size: 12.5px;
-    color: var(--faint);
-    letter-spacing: 0.01em;
-  }
-
-  .state button {
-    font: inherit;
-    color: var(--warn);
-    background: none;
-    border: none;
-    border-bottom: 1px dotted currentColor;
-    padding: 0;
-    cursor: pointer;
-  }
-
-  .state button:hover { color: var(--ink); }
-
-  /* ---------- controls ---------- */
+  /* ---------- search ---------- */
 
   .controls {
-    margin-top: 26px;
-    padding-top: 22px;
+    margin-top: 30px;
+    padding-top: 26px;
     border-top: 1px solid var(--rule);
   }
 
-  .search-shell { position: relative; }
+  .field { position: relative; }
 
-  .search-shell input {
+  .field input {
     width: 100%;
+    -webkit-appearance: none;
+    appearance: none;
     font-family: var(--sans);
     font-size: 15px;
     color: var(--ink);
@@ -134,10 +115,11 @@
     padding: 11px 52px 11px 14px;
   }
 
-  .search-shell input::placeholder { color: var(--faint); }
-  .search-shell input:focus { border-color: var(--accent); outline: none; }
+  .field input::placeholder { color: var(--faint); }
+  .field input:focus { border-color: var(--c1); outline: none; }
+  .field input::-webkit-search-cancel-button { -webkit-appearance: none; }
 
-  .slash-hint {
+  .key {
     position: absolute;
     right: 12px;
     top: 50%;
@@ -149,141 +131,83 @@
     border-radius: 4px;
     padding: 1px 6px;
     pointer-events: none;
+    transition: opacity .12s;
   }
 
-  .search-shell input:focus ~ .slash-hint { opacity: 0; }
+  .field input:focus ~ .key { opacity: 0; }
 
-  .filters {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 7px;
-    margin-top: 14px;
-  }
-
-  .chip {
+  .count {
+    margin: 14px 0 0;
     font-family: var(--mono);
     font-size: 12px;
-    color: var(--muted);
-    background: transparent;
-    border: 1px solid var(--rule);
-    border-radius: 20px;
-    padding: 3px 11px;
-    cursor: pointer;
-    transition: color .12s, border-color .12s;
-  }
-
-  .chip:hover { color: var(--ink); border-color: var(--faint); }
-
-  .chip[aria-pressed="true"] {
-    color: var(--bg);
-    background: var(--accent);
-    border-color: var(--accent);
-  }
-
-  .sorts {
-    margin-left: auto;
-    display: flex;
-    gap: 4px;
-    font-family: var(--mono);
-    font-size: 12px;
-  }
-
-  .sorts button {
-    font: inherit;
     color: var(--faint);
-    background: none;
-    border: none;
-    padding: 3px 2px;
-    cursor: pointer;
+    letter-spacing: 0.01em;
   }
-
-  .sorts button:hover { color: var(--ink); }
-  .sorts button[aria-pressed="true"] { color: var(--ink); border-bottom: 1.5px solid var(--accent); }
-  .sorts .sep { color: var(--rule); align-self: center; }
 
   /* ---------- list ---------- */
 
-  .list { list-style: none; margin: 0; padding: 0; }
+  .list {
+    list-style: none;
+    margin: 18px 0 0;
+    padding: 0;
+  }
 
-  .list li { border-bottom: 1px solid var(--rule); }
+  .list li { border-top: 1px solid var(--rule); }
+  .list li:last-child { border-bottom: 1px solid var(--rule); }
 
   .row {
     display: grid;
-    grid-template-columns: 46px 1fr;
-    gap: 18px;
-    padding: 20px 8px 20px 0;
+    grid-template-columns: 98px 1fr;
+    gap: 28px;
+    padding: 19px 10px 19px 4px;
     text-decoration: none;
+    color: inherit;
     transition: background .12s;
   }
 
   .row:hover { background: rgba(47, 97, 87, 0.045); }
 
-  .meter {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    padding-top: 7px;
+  .date {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--faint);
+    padding-top: 4px;
+    white-space: nowrap;
   }
 
-  .seg {
-    height: 4px;
-    border-radius: 2px;
-    background: var(--rule);
-  }
+  .row:hover .date { color: var(--muted); }
 
-  .seg.on { background: var(--accent); }
-  .row.stale .seg.on { background: var(--warn); }
-
-  .row-title {
+  .title {
     margin: 0;
     font-size: 17px;
     font-weight: 600;
     letter-spacing: -0.01em;
   }
 
-  .row:hover .row-title { color: var(--accent); }
+  .row:hover .title { color: var(--c1); }
 
-  .row-summary {
-    margin: 3px 0 0;
+  .summary {
+    margin: 4px 0 0;
     color: var(--muted);
     font-size: 14.5px;
   }
 
-  .row-meta {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px;
-    margin-top: 9px;
-    font-family: var(--mono);
-    font-size: 11.5px;
-    color: var(--faint);
-  }
-
-  .conf {
-    border: 1px solid var(--rule);
-    border-radius: 3px;
-    padding: 1px 6px;
-    letter-spacing: 0.03em;
-  }
-
-  .conf[data-level="working"] { color: var(--muted); border-color: var(--faint); }
-  .conf[data-level="solid"]   { color: var(--bg); background: var(--accent); border-color: var(--accent); }
-
-  .row.stale .age { color: var(--warn); }
-
-  .dot { color: var(--rule); }
-
   /* ---------- states ---------- */
 
   .msg {
-    padding: 44px 0;
+    padding: 46px 4px;
     color: var(--muted);
     font-size: 15px;
+    max-width: 60ch;
   }
 
-  .msg strong { display: block; color: var(--ink); font-size: 16px; margin-bottom: 7px; }
+  .msg strong {
+    display: block;
+    color: var(--ink);
+    font-size: 16px;
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
 
   .msg code {
     font-family: var(--mono);
@@ -293,25 +217,23 @@
     padding: 1px 5px;
   }
 
-  /* ---------- footnote ---------- */
+  /* ---------- footer ---------- */
 
-  .footnote {
-    margin-top: 44px;
+  .foot {
+    margin-top: 46px;
     padding-top: 20px;
     border-top: 1px solid var(--rule);
-    font-size: 13px;
+    font-size: 13.5px;
     color: var(--faint);
-    max-width: 56ch;
   }
 
-  .footnote p { margin: 0 0 8px; }
-  .footnote p:last-child { margin-bottom: 0; }
+  .foot a { color: var(--muted); }
+  .foot a:hover { color: var(--c1); }
 
   /* ---------- motion ---------- */
 
-  .list li {
-    animation: rise .34s cubic-bezier(.22,.8,.3,1) backwards;
-  }
+  .list li { animation: rise .32s cubic-bezier(.22, .8, .3, 1) backwards; }
+  .list.still li { animation: none; }
 
   @keyframes rise {
     from { opacity: 0; transform: translateY(7px); }
@@ -319,50 +241,45 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    * { animation: none !important; transition: none !important; }
+    *, *::before, *::after { animation: none !important; transition: none !important; }
   }
 
+  /* ---------- narrow ---------- */
+
   @media (max-width: 560px) {
-    .wrap { padding: 30px 18px 60px; }
-    .wordmark { font-size: 23px; }
-    .row { grid-template-columns: 34px 1fr; gap: 14px; }
-    .sorts { margin-left: 0; width: 100%; }
-    .slash-hint { display: none; }
+    .page { padding: 30px 18px 60px; }
+    .wordmark { font-size: 24px; }
+    .row { grid-template-columns: 1fr; gap: 7px; }
+    .date { order: 2; padding-top: 0; font-size: 12px; }
+    .key { display: none; }
   }
 </style>
 </head>
 <body>
-<div class="wrap">
+<div class="page">
 
   <header class="masthead">
     <h1 class="wordmark">learn<span class="slash">/</span></h1>
-    <a class="repo-link" href="https://github.com/dinith-heshan/learn">github.com/dinith-heshan/learn</a>
+    <a class="repo" href="https://github.com/dinith-heshan/learn">github.com/dinith-heshan/learn</a>
   </header>
-  <p class="tagline">Interactive pages for concepts I'm learning. Written while figuring them out, so they may contain errors.</p>
-  <p class="state" id="state"></p>
+
+  <p class="tagline">Interactive pages for concepts in computer science and software engineering.</p>
 
   <div class="controls">
-    <div class="search-shell">
-      <label for="q" hidden>Search concepts</label>
-      <input id="q" type="search" placeholder="Search titles, summaries, tags" autocomplete="off" spellcheck="false">
-      <span class="slash-hint">/</span>
+    <div class="field">
+      <input id="q" type="search" aria-label="Search concepts"
+             placeholder="Search" autocomplete="off" spellcheck="false">
+      <span class="key">/</span>
     </div>
-    <div class="filters">
-      <div id="tags" class="filters" style="margin:0;gap:7px"></div>
-      <div class="sorts">
-        <button id="sort-recent" aria-pressed="true">recent</button>
-        <span class="sep">·</span>
-        <button id="sort-review" aria-pressed="false">needs review</button>
-      </div>
-    </div>
+    <p class="count" id="count" aria-live="polite"></p>
   </div>
 
   <ul class="list" id="list"></ul>
   <div class="msg" id="msg" hidden></div>
 
-  <footer class="footnote">
-    <p>The bar on each entry estimates how much of a concept is still in my head, from time since last review and how well I understood it. It's a nudge to revisit things, not a measurement.</p>
-    <p>Spotted something wrong? <a href="https://github.com/dinith-heshan/learn/issues/new?labels=correction">Open an issue</a>.</p>
+  <footer class="foot">
+    Suggestions and corrections —
+    <a href="https://github.com/dinith-heshan/learn/issues/new">open an issue</a>.
   </footer>
 
 </div>
@@ -371,49 +288,14 @@
 (function () {
   "use strict";
 
-  var HALF_LIFE = { exploring: 14, working: 45, solid: 120 };
-  var DAY = 86400000;
+  const $list  = document.getElementById("list");
+  const $msg   = document.getElementById("msg");
+  const $count = document.getElementById("count");
+  const $q     = document.getElementById("q");
 
-  var state = { q: "", tag: null, sort: "recent" };
-  var concepts = [];
-
-  var $list  = document.getElementById("list");
-  var $msg   = document.getElementById("msg");
-  var $state = document.getElementById("state");
-  var $q     = document.getElementById("q");
-  var $tags  = document.getElementById("tags");
-
-  function daysSince(iso) {
-    var t = Date.parse(iso);
-    if (isNaN(t)) return null;
-    return Math.max(0, Math.floor((Date.now() - t) / DAY));
-  }
-
-  function retention(c) {
-    var d = daysSince(c.reviewed || c.learned);
-    if (d === null) return 1;
-    var h = HALF_LIFE[c.confidence] || HALF_LIFE.working;
-    return Math.pow(0.5, d / h);
-  }
-
-  function segments(r) {
-    return Math.max(0, Math.min(5, Math.round(r * 5)));
-  }
-
-  function needsReview(c) {
-    return retention(c) < 0.5;
-  }
-
-  function ageLabel(iso) {
-    var d = daysSince(iso);
-    if (d === null) return "";
-    if (d === 0) return "reviewed today";
-    if (d === 1) return "reviewed yesterday";
-    if (d < 30) return "reviewed " + d + "d ago";
-    if (d < 365) return "reviewed " + Math.round(d / 30) + "mo ago";
-    var y = (d / 365).toFixed(1).replace(/\.0$/, "");
-    return "reviewed " + y + "y ago";
-  }
+  let concepts = [];
+  let query = "";
+  let firstPaint = true;
 
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, function (m) {
@@ -422,112 +304,58 @@
   }
 
   function matches(c) {
-    if (state.tag && (c.tags || []).indexOf(state.tag) === -1) return false;
-    if (!state.q) return true;
-    var hay = [c.title, c.summary, (c.tags || []).join(" ")].join(" ").toLowerCase();
-    return state.q.toLowerCase().split(/\s+/).every(function (w) {
+    if (!query) return true;
+    const hay = (String(c.title || "") + " " + String(c.summary || "")).toLowerCase();
+    return query.toLowerCase().split(/\s+/).every(function (w) {
       return hay.indexOf(w) !== -1;
     });
   }
 
-  function showMessage(title, body) {
+  function message(title, body) {
     $list.innerHTML = "";
     $msg.hidden = false;
     $msg.innerHTML = "<strong>" + title + "</strong>" + body;
   }
 
-  function renderTags() {
-    var counts = {};
-    concepts.forEach(function (c) {
-      (c.tags || []).forEach(function (t) { counts[t] = (counts[t] || 0) + 1; });
-    });
-    var names = Object.keys(counts).sort(function (a, b) {
-      return counts[b] - counts[a] || a.localeCompare(b);
-    });
-    $tags.innerHTML = "";
-    names.forEach(function (t) {
-      var b = document.createElement("button");
-      b.className = "chip";
-      b.textContent = t;
-      b.setAttribute("aria-pressed", String(state.tag === t));
-      b.addEventListener("click", function () {
-        state.tag = state.tag === t ? null : t;
-        renderTags();
-        render();
-      });
-      $tags.appendChild(b);
-    });
-  }
-
   function render() {
-    var items = concepts.filter(matches);
-
-    items.sort(function (a, b) {
-      if (state.sort === "review") return retention(a) - retention(b);
-      return String(b.learned || "").localeCompare(String(a.learned || ""));
-    });
-
-    var due = concepts.filter(needsReview).length;
-    $state.innerHTML = concepts.length === 0
-      ? ""
-      : concepts.length + (concepts.length === 1 ? " concept" : " concepts")
-        + (due ? ' <span class="dot">·</span> <button id="due">' + due + " need review</button>" : "");
-
-    var dueBtn = document.getElementById("due");
-    if (dueBtn) {
-      dueBtn.addEventListener("click", function () {
-        setSort("review");
-      });
-    }
+    const items = concepts.filter(matches);
 
     if (concepts.length === 0) {
-      showMessage("No concepts yet.",
-        "The first one goes in <code>concepts.json</code>, with its page at <code>concepts/&lt;slug&gt;/index.html</code>.");
+      $count.textContent = "";
+      message("No concepts yet.",
+        "The first entry goes in <code>concepts.json</code>, with its page at "
+        + "<code>concepts/&lt;slug&gt;/index.html</code>.");
       return;
     }
 
+    $count.textContent = query
+      ? items.length + " of " + concepts.length
+      : concepts.length + (concepts.length === 1 ? " concept" : " concepts");
+
     if (items.length === 0) {
-      showMessage("Nothing matches.", "Try a shorter search, or clear the tag filter.");
+      message("Nothing matches.", "Try a shorter search.");
       return;
     }
 
     $msg.hidden = true;
+    $list.className = firstPaint ? "list" : "list still";
+
     $list.innerHTML = items.map(function (c, i) {
-      var r = retention(c);
-      var on = segments(r);
-      var stale = r < 0.5;
-      var segs = "";
-      for (var s = 0; s < 5; s++) segs += '<span class="seg' + (s < on ? " on" : "") + '"></span>';
-
-      var tags = (c.tags || []).map(function (t) { return esc(t); }).join(' <span class="dot">·</span> ');
-      var conf = esc(c.confidence || "exploring");
-
-      return '<li style="animation-delay:' + Math.min(i * 22, 260) + 'ms">'
-        + '<a class="row' + (stale ? " stale" : "") + '" href="concepts/' + encodeURIComponent(c.slug) + '/">'
-        + '<span class="meter" aria-hidden="true">' + segs + '</span>'
+      const delay = firstPaint ? Math.min(i * 24, 260) : 0;
+      return '<li style="animation-delay:' + delay + 'ms">'
+        + '<a class="row" href="concepts/' + encodeURIComponent(c.slug) + '/">'
+        + '<span class="date">' + esc(c.added) + '</span>'
         + '<span>'
-        + '<h2 class="row-title">' + esc(c.title) + '</h2>'
-        + (c.summary ? '<p class="row-summary">' + esc(c.summary) + '</p>' : '')
-        + '<span class="row-meta">'
-        + '<span class="conf" data-level="' + conf + '">' + conf + '</span>'
-        + (tags ? '<span>' + tags + '</span> <span class="dot">·</span>' : '')
-        + '<span class="age">' + esc(ageLabel(c.reviewed || c.learned)) + '</span>'
-        + '</span></span></a></li>';
+        + '<h2 class="title">' + esc(c.title) + '</h2>'
+        + (c.summary ? '<p class="summary">' + esc(c.summary) + '</p>' : '')
+        + '</span></a></li>';
     }).join("");
-  }
 
-  function setSort(mode) {
-    state.sort = mode;
-    document.getElementById("sort-recent").setAttribute("aria-pressed", String(mode === "recent"));
-    document.getElementById("sort-review").setAttribute("aria-pressed", String(mode === "review"));
-    render();
+    firstPaint = false;
   }
-
-  document.getElementById("sort-recent").addEventListener("click", function () { setSort("recent"); });
-  document.getElementById("sort-review").addEventListener("click", function () { setSort("review"); });
 
   $q.addEventListener("input", function () {
-    state.q = $q.value.trim();
+    query = $q.value.trim();
     render();
   });
 
@@ -535,10 +363,9 @@
     if (e.key === "/" && document.activeElement !== $q) {
       e.preventDefault();
       $q.focus();
-    }
-    if (e.key === "Escape" && document.activeElement === $q) {
+    } else if (e.key === "Escape" && document.activeElement === $q) {
       $q.value = "";
-      state.q = "";
+      query = "";
       render();
       $q.blur();
     }
@@ -550,14 +377,19 @@
       return r.json();
     })
     .then(function (data) {
-      concepts = (data && data.concepts) || [];
-      renderTags();
+      concepts = (data && Array.isArray(data.concepts) ? data.concepts : [])
+        .slice()
+        .sort(function (a, b) {
+          return String(b.added || "").localeCompare(String(a.added || ""));
+        });
       render();
     })
     .catch(function () {
-      showMessage("Couldn't load concepts.json.",
-        "This page reads its list over the network, so opening the file directly from disk won't work. "
-        + "View it on GitHub Pages, or run <code>python3 -m http.server</code> in the repo folder and open "
+      $count.textContent = "";
+      message("Couldn't load concepts.json.",
+        "This page reads its list over the network, so opening the file straight from "
+        + "disk won't work. View it on GitHub Pages, or run "
+        + "<code>python3 -m http.server</code> in the repo folder and open "
         + "<code>localhost:8000</code>.");
     });
 })();
