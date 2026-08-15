@@ -4,686 +4,723 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<title>The DRAM Row Buffer</title>
-<meta name="description" content="Reading a DRAM cell destroys it, so the chip lifts an entire row into a strip of latches — which is why the cost of a memory access depends on what you accessed last.">
+<title>The DRAM row buffer</title>
+<meta name="description" content="Reading a DRAM cell destroys it, so a whole row is latched into a buffer. Access cost depends on history.">
 
-<meta property="og:title" content="The DRAM Row Buffer">
-<meta property="og:description" content="Reading a DRAM cell destroys it, so the chip lifts an entire row into a strip of latches — which is why the cost of a memory access depends on what you accessed last.">
+<meta property="og:title" content="The DRAM row buffer">
+<meta property="og:description" content="Reading a DRAM cell destroys it, so a whole row is latched into a buffer. Access cost depends on history.">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://dinith-heshan.github.io/learn/concepts/dram-row-buffer/">
 <meta property="og:image" content="https://dinith-heshan.github.io/learn/assets/og-default.png">
 <meta name="twitter:card" content="summary_large_image">
 
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%232f6157'/><rect x='7' y='13' width='18' height='2.6' rx='1.3' fill='%23faf8f3'/><rect x='7' y='19' width='11' height='2.6' rx='1.3' fill='%23faf8f3' opacity='.55'/></svg>">
+
 <style>
-:root{
-  --paper:#f4efe4;
-  --panel:#fbf8f1;
-  --ink:#1c1915;
-  --ink-soft:#5d564a;
-  --faint:#918876;
-  --rule:#ddd4c2;
-  --rule-soft:#e9e2d4;
-  --hot:#ad3311;      /* activation, restore, the expensive path */
-  --hot-bg:#f6e4d9;
-  --cool:#12585d;     /* latched, stable, the cheap path */
-  --cool-bg:#dcebea;
-  --deep:#34306b;     /* parallelism */
-  --deep-bg:#e4e2f0;
-  --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
-  --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;
-}
-*,*::before,*::after{box-sizing:border-box}
-html{scroll-behavior:smooth}
-body{
-  margin:0;background:var(--paper);color:var(--ink);
-  font-family:var(--sans);font-size:16.5px;line-height:1.62;
-  -webkit-font-smoothing:antialiased;
-}
-:focus-visible{outline:2.5px solid var(--hot);outline-offset:3px;border-radius:3px}
+:root {
+  /* ground — never overridden */
+  --bg:    #faf8f3;
+  --ink:   #23211d;
+  --muted: #6f6a60;
+  --faint: #948f83;
+  --rule:  #e5e0d3;
 
-h1,h2,h3{font-family:var(--mono);font-weight:600;letter-spacing:-.01em}
-h1{font-size:clamp(1.9rem,5vw,2.7rem);line-height:1.08;margin:0 0 14px;letter-spacing:-.03em}
-h2{
-  font-size:.8rem;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);
-  margin:0 0 14px;display:flex;align-items:center;gap:12px;font-weight:500;
-}
-h2::after{content:"";flex:1;height:1px;background:var(--rule)}
-h3{font-size:1rem;margin:30px 0 8px;letter-spacing:-.01em}
-p{margin:0 0 16px}
-code{font-family:var(--mono);font-size:.87em;background:var(--rule-soft);padding:1px 5px;border-radius:3px}
-strong{font-weight:600}
-a{color:var(--hot);text-underline-offset:2px}
-.hot{color:var(--hot);font-weight:600}
-.cool{color:var(--cool);font-weight:600}
-.deep{color:var(--deep);font-weight:600}
+  /* semantic — meaning assigned per page, values never changed */
+  --c1: #2f6157;   /* green */
+  --c2: #a8721c;   /* amber */
+  --c3: #3f5d7d;   /* slate */
 
-/* ---------- masthead ---------- */
-.top{max-width:1180px;margin:0 auto;padding:46px 28px 30px}
-.kicker{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--faint);margin:0 0 20px}
-.what{font-size:1.16rem;line-height:1.52;color:var(--ink-soft);max-width:62ch;margin:0 0 24px}
-.meta{
-  display:flex;flex-wrap:wrap;gap:6px 26px;font-family:var(--mono);font-size:11.5px;
-  color:var(--faint);letter-spacing:.05em;padding:14px 0;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);
-}
-.meta b{color:var(--ink-soft);font-weight:500}
-.conf{color:var(--hot);font-weight:600}
-.notice{
-  font-family:var(--mono);font-size:11.5px;line-height:1.55;color:var(--hot);
-  background:var(--hot-bg);border-left:2.5px solid var(--hot);
-  padding:9px 14px;margin:18px 0 0;border-radius:0 4px 4px 0;
+  --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
-/* ---------- two-track layout: the chip stays, the text moves ---------- */
-.track{
-  max-width:1180px;margin:0 auto;padding:0 28px 90px;
-  display:grid;grid-template-columns:minmax(0,1fr) 430px;gap:56px;align-items:start;
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
 }
-.prose{min-width:0;padding-top:38px}
-.prose section{margin-bottom:52px;scroll-margin-top:20px}
 
-.chip-wrap{position:sticky;top:22px;padding-top:38px}
+.page    { max-width: 1280px; margin: 0 auto; padding: 0 40px; }
+.measure { max-width: 68ch; }
 
-/* ---------- the chip ---------- */
-.chip{background:var(--panel);border:1px solid var(--rule);border-radius:10px;padding:18px}
-.chip-h{
-  display:flex;justify-content:space-between;align-items:baseline;gap:10px;
-  font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;
-  color:var(--faint);margin-bottom:14px;
+:focus-visible {
+  outline: 2px solid var(--c1);
+  outline-offset: 3px;
+  border-radius: 2px;
 }
-#phase{color:var(--hot);font-weight:600}
-.grid{display:grid;grid-template-columns:34px repeat(8,1fr);gap:4px}
-.rl{font-family:var(--mono);font-size:9.5px;color:var(--faint);display:flex;align-items:center;justify-content:flex-end;padding-right:5px}
-.cl{font-family:var(--mono);font-size:9.5px;color:var(--faint);text-align:center}
-.cell{
-  aspect-ratio:1;border:1px solid var(--rule);background:var(--paper);border-radius:4px;
-  font-family:var(--mono);font-size:10px;color:var(--faint);cursor:pointer;padding:0;
-  display:flex;align-items:center;justify-content:center;
-  transition:background .22s,border-color .22s,color .22s,transform .22s;
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
 }
-.cell:hover{border-color:var(--faint)}
-.cell.open{background:var(--hot-bg);border-color:var(--hot);color:var(--hot)}
-.cell.sel{background:var(--hot);border-color:var(--hot);color:var(--panel);transform:scale(1.1);font-weight:600}
-.cell.drain{opacity:.32}
 
-.sense{display:grid;grid-template-columns:34px repeat(8,1fr);gap:4px;margin-top:9px}
-.sense-l{font-family:var(--mono);font-size:8px;color:var(--faint);text-align:right;padding-right:5px;line-height:1.15;align-self:center}
-.amp{height:7px;border-radius:2px;background:var(--rule-soft);transition:background .22s}
-.amp.on{background:var(--hot)}
+@media (max-width: 900px) { /* grid collapses to one column */ }
+@media (max-width: 560px) { .page { padding: 0 18px; } }
 
-.buf{display:grid;grid-template-columns:34px repeat(8,1fr);gap:4px;margin-top:5px}
-.buf-l{font-family:var(--mono);font-size:8.5px;color:var(--cool);text-align:right;padding-right:5px;line-height:1.15;align-self:center}
-.lat{
-  height:26px;border:1px solid var(--rule);background:var(--paper);border-radius:4px;
-  font-family:var(--mono);font-size:10px;color:var(--faint);
-  display:flex;align-items:center;justify-content:center;transition:background .22s,border-color .22s,color .22s;
+/* ==========================================================
+   Page-specific. One easing curve, one duration, both reused.
+   Colour on this page:
+     c1 green = latched row, page hit, the cheap path
+     c2 amber = activation and restore, page miss, the penalty
+     c3 slate = banks and parallelism
+   ========================================================== */
+:root { --ease: cubic-bezier(.4,0,.2,1); --dur: 200ms; }
+
+/* ---------- furniture ---------- */
+.strip {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 16px;
+  font-family: var(--mono); font-size: 12px; letter-spacing: .04em;
+  padding: 18px 0 12px; border-bottom: 1px solid var(--rule);
 }
-.lat.live{background:var(--cool-bg);border-color:var(--cool);color:var(--cool);font-weight:600}
-.lat.out{background:var(--cool);border-color:var(--cool);color:var(--panel)}
+.strip a { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--rule); }
+.strip a:hover { border-color: var(--c1); color: var(--c1); }
+.strip time { color: var(--faint); }
 
-.say{
-  font-family:var(--mono);font-size:11px;line-height:1.6;color:var(--ink-soft);
-  background:var(--paper);border:1px solid var(--rule-soft);border-radius:6px;
-  padding:10px 12px;margin-top:13px;min-height:58px;
+.title-block { padding: 40px 0 34px; }
+h1 { font-family: var(--mono); font-weight: 600; letter-spacing: -.03em; font-size: 2.5rem; line-height: 1.06; margin: 0 0 16px; }
+.what { font-size: 1.1rem; line-height: 1.5; color: var(--muted); margin: 0; }
+
+/* ---------- body: prose + sticky pane ---------- */
+.body {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) 420px;
+  column-gap: 48px;
+  align-items: start;
+  padding-bottom: 24px;
 }
-.say b{color:var(--ink)}
-.tag-hit{color:var(--cool);font-weight:600}
-.tag-miss{color:var(--hot);font-weight:600}
+.col-a { grid-column: 1; grid-row: 1; }
+.col-b { grid-column: 1; grid-row: 2; }
+.pane  { grid-column: 2; grid-row: 1 / span 2; position: sticky; top: 24px; }
+.col-a, .col-b { max-width: 68ch; }
+.col-a, .col-b, .pane { min-width: 0; }
+.chip, .arr-wrap { min-width: 0; }
 
-.tally{display:flex;gap:14px;margin-top:11px;font-family:var(--mono);font-size:10px;color:var(--faint);letter-spacing:.06em}
-.tally b{display:block;font-size:16px;color:var(--ink);letter-spacing:-.02em}
-.tally .h b{color:var(--cool)}
-.tally .m b{color:var(--hot)}
-
-.chip-btns{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap}
-.btn{
-  font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;cursor:pointer;
-  background:transparent;color:var(--ink-soft);border:1px solid var(--rule);
-  border-radius:5px;padding:6px 10px;transition:background .15s;
+section { margin-bottom: 44px; }
+h2 {
+  font-family: var(--mono); font-weight: 500; font-size: .78rem;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--faint);
+  margin: 0 0 13px; display: flex; align-items: center; gap: 12px;
 }
-.btn:hover{background:var(--rule-soft)}
-.btn-solid{background:var(--ink);color:var(--panel);border-color:var(--ink)}
-.btn-solid:hover{background:var(--ink);opacity:.85}
+h2::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+p { margin: 0 0 15px; }
+code { font-family: var(--mono); font-size: .87em; background: var(--rule); padding: 1px 5px; border-radius: 2px; }
+strong { font-weight: 600; }
+a { color: var(--c1); text-underline-offset: 2px; }
+.k1 { color: var(--c1); font-weight: 600; }
+.k2 { color: var(--c2); font-weight: 600; }
+.k3 { color: var(--c3); font-weight: 600; }
 
-/* ---------- inline figures in the prose ---------- */
-figure{margin:24px 0;background:var(--panel);border:1px solid var(--rule);border-radius:10px;padding:18px}
-figcaption{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin-bottom:14px}
-
-/* timing comparison */
-.tl{margin-bottom:16px}
-.tl:last-child{margin-bottom:0}
-.tl-h{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10.5px;color:var(--ink-soft);margin-bottom:5px}
-.tl-h em{font-style:normal;color:var(--faint)}
-.tl-bar{display:flex;height:30px;border-radius:5px;overflow:hidden;border:1px solid var(--rule)}
-.seg{display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:9.5px;letter-spacing:.04em;color:var(--panel);min-width:0;overflow:hidden}
-.seg.rp{background:var(--hot)}
-.seg.rcd{background:#c9542e}
-.seg.cl{background:var(--cool)}
-.seg.pad{background:var(--rule-soft)}
-
-/* address strip */
-.addr{display:flex;gap:3px;margin-bottom:5px}
-.af{flex-basis:0;border-radius:4px;padding:8px 4px;text-align:center;border:1px solid;font-family:var(--mono);font-size:10px}
-.af b{display:block;font-size:10.5px;letter-spacing:.04em}
-.af.r{flex-grow:4;background:var(--hot-bg);border-color:var(--hot);color:var(--hot)}
-.af.b{flex-grow:2;background:var(--deep-bg);border-color:var(--deep);color:var(--deep)}
-.af.c{flex-grow:4;background:var(--cool-bg);border-color:var(--cool);color:var(--cool)}
-.af.o{flex-grow:2;background:var(--rule-soft);border-color:var(--rule);color:var(--faint)}
-.bits{display:flex;gap:3px;font-family:var(--mono);font-size:11px;color:var(--ink-soft);margin-bottom:14px}
-.bits>div{flex-basis:0;text-align:center}
-.bits .r{flex-grow:4}.bits .b{flex-grow:2}.bits .c{flex-grow:4}.bits .o{flex-grow:2}
-.slider{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.slider label{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
-.slider input{flex:1;min-width:150px;accent-color:var(--hot)}
-.slider output{font-family:var(--mono);font-size:12px;font-weight:600;background:var(--paper);border:1px solid var(--rule);border-radius:4px;padding:3px 9px}
-
-/* banks */
-.banks{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
-.bank{border:1px solid var(--rule);border-radius:7px;padding:9px;background:var(--paper);transition:background .25s,border-color .25s}
-.bank.busy{background:var(--deep-bg);border-color:var(--deep)}
-.bank-n{font-family:var(--mono);font-size:9px;letter-spacing:.1em;color:var(--faint);margin-bottom:6px}
-.bank.busy .bank-n{color:var(--deep)}
-.bank-s{font-family:var(--mono);font-size:10px;color:var(--faint);text-align:center;padding:4px;border:1px dashed var(--rule);border-radius:4px;background:var(--panel)}
-.bank.busy .bank-s{border-style:solid;border-color:var(--deep);color:var(--deep);font-weight:600}
-
-/* misconceptions */
-.wrong{border-left:2.5px solid var(--rule);padding-left:16px;margin:0 0 22px}
-.wrong-c{font-family:var(--mono);font-size:11px;color:var(--hot);letter-spacing:.04em;margin:0 0 5px}
-.wrong-c::before{content:"✗ ";}
-.wrong p{margin:0;font-size:.95rem}
-
-.hedge{
-  font-size:.9rem;color:var(--ink-soft);background:var(--panel);
-  border:1px dashed var(--rule);border-radius:7px;padding:12px 15px;margin:22px 0;
+/* ---------- the pane ---------- */
+.chip { border: 1px solid var(--rule); border-radius: 8px; padding: 16px; }
+.chip-h {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
+  font-family: var(--mono); font-size: 10px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--faint); margin-bottom: 13px;
 }
-.hedge b{font-family:var(--mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);display:block;margin-bottom:4px}
+#phase { font-weight: 600; }
 
-ul{margin:0 0 16px;padding-left:19px}
-li{margin-bottom:6px}
-.srcs{list-style:none;padding:0;font-size:.93rem}
-.srcs li{margin-bottom:11px;padding-left:15px;border-left:2px solid var(--rule-soft)}
-.srcs span{display:block;font-size:.85rem;color:var(--faint)}
+.arr-wrap { position: relative; }
+.arr-scroll { overflow-x: auto; }
+.grid, .sense, .buf { display: grid; grid-template-columns: 38px repeat(8, minmax(30px,1fr)); gap: 4px; }
+.rl, .cl { font-family: var(--mono); font-size: 9.5px; color: var(--faint); display: flex; align-items: center; justify-content: center; }
+.rl { justify-content: flex-end; padding-right: 5px; letter-spacing: .04em; }
+.cell {
+  aspect-ratio: 1; border: 1px solid var(--rule); background: var(--bg);
+  border-radius: 3px; font-family: var(--mono); font-size: 10px; color: var(--faint);
+  cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center;
+  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease),
+              color var(--dur) var(--ease), transform var(--dur) var(--ease);
+}
+.cell:hover { border-color: var(--faint); }
+.cell.open { background: #f6eddc; border-color: var(--c2); color: var(--c2); }
+.cell.sel  { background: var(--c2); border-color: var(--c2); color: var(--bg); transform: scale(1.1); font-weight: 600; }
+.cell.drain { opacity: .3; }
+
+.sense { margin-top: 8px; }
+.sense-l, .buf-l { font-family: var(--mono); font-size: 8px; color: var(--faint); text-align: right; padding-right: 5px; line-height: 1.15; align-self: center; }
+.buf-l { color: var(--c1); font-size: 8.5px; }
+.amp { height: 6px; border-radius: 2px; background: var(--rule); transition: background var(--dur) var(--ease); }
+.amp.on { background: var(--c2); }
+
+.buf { margin-top: 5px; }
+.lat {
+  height: 25px; border: 1px solid var(--rule); background: var(--bg); border-radius: 3px;
+  font-family: var(--mono); font-size: 10px; color: var(--faint);
+  display: flex; align-items: center; justify-content: center;
+  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+.lat.live { background: #dfeae7; border-color: var(--c1); color: var(--c1); font-weight: 600; }
+.lat.out  { background: var(--c1); border-color: var(--c1); color: var(--bg); }
+
+.legend { display: flex; flex-wrap: wrap; gap: 5px 14px; margin-top: 11px; font-family: var(--mono); font-size: 9.5px; color: var(--faint); letter-spacing: .04em; }
+.legend span { display: flex; align-items: center; gap: 5px; }
+.sw { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
+.sw1 { background: var(--c1); }
+.sw2 { background: var(--c2); }
+.sw3 { background: var(--c3); }
+
+.say { font-family: var(--mono); font-size: 11px; line-height: 1.55; color: var(--muted); border: 1px solid var(--rule); border-radius: 5px; padding: 10px 12px; margin-top: 12px; min-height: 56px; }
+.say b { color: var(--ink); }
+.t-hit  { color: var(--c1); font-weight: 600; }
+.t-miss { color: var(--c2); font-weight: 600; }
+
+.tally { display: flex; gap: 15px; margin-top: 11px; font-family: var(--mono); font-size: 9.5px; color: var(--faint); letter-spacing: .06em; }
+.tally b { display: block; font-size: 16px; color: var(--ink); letter-spacing: -.02em; }
+.tally .h b { color: var(--c1); }
+.tally .m b { color: var(--c2); }
+
+.btns { display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap; }
+.btn {
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; cursor: pointer;
+  background: var(--bg); color: var(--muted); border: 1px solid var(--rule);
+  border-radius: 4px; padding: 8px 11px;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+.btn:hover { background: var(--rule); color: var(--ink); }
+.btn-solid { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.btn-solid:hover { background: var(--muted); color: var(--bg); }
+
+/* ---------- figures ---------- */
+figure { margin: 22px 0; border: 1px solid var(--rule); border-radius: 8px; padding: 16px; }
+figcaption { font-family: var(--mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--faint); margin-bottom: 13px; }
+
+.tl { margin-bottom: 14px; }
+.tl:last-of-type { margin-bottom: 0; }
+.tl-h { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 10.5px; color: var(--muted); margin-bottom: 5px; }
+.tl-h em { font-style: normal; color: var(--faint); }
+.tl-bar { display: flex; height: 29px; border-radius: 4px; overflow: hidden; border: 1px solid var(--rule); }
+.seg { display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 9px; letter-spacing: .04em; color: var(--bg); min-width: 0; overflow: hidden; }
+.seg.a { background: var(--c2); }
+.seg.b { background: #c08a33; }
+.seg.c { background: var(--c1); }
+.seg.pad { background: var(--rule); }
+
+.addr { display: flex; gap: 3px; margin-bottom: 5px; }
+.af { flex-basis: 0; border-radius: 3px; padding: 7px 3px; text-align: center; border: 1px solid; font-family: var(--mono); font-size: 9px; }
+.af b { display: block; font-size: 10px; letter-spacing: .04em; }
+.af.r { flex-grow: 4; background: #f6eddc; border-color: var(--c2); color: var(--c2); }
+.af.b { flex-grow: 2; background: #e2e8ef; border-color: var(--c3); color: var(--c3); }
+.af.c { flex-grow: 4; background: #dfeae7; border-color: var(--c1); color: var(--c1); }
+.af.o { flex-grow: 2; background: var(--rule); border-color: var(--faint); color: var(--muted); }
+.bits { display: flex; gap: 3px; font-family: var(--mono); font-size: 11px; color: var(--muted); margin-bottom: 13px; }
+.bits > div { flex-basis: 0; text-align: center; }
+.bits .r { flex-grow: 4; } .bits .b { flex-grow: 2; } .bits .c { flex-grow: 4; } .bits .o { flex-grow: 2; }
+.slider { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.slider label { font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--faint); }
+.slider input { flex: 1; min-width: 150px; accent-color: var(--c2); height: 24px; }
+.slider output { font-family: var(--mono); font-size: 12px; font-weight: 600; border: 1px solid var(--rule); border-radius: 3px; padding: 3px 9px; }
+#adec { font-family: var(--mono); font-size: 11px; color: var(--muted); margin: 12px 0 0; }
+
+.banks { display: grid; grid-template-columns: repeat(4,1fr); gap: 7px; }
+.bank { border: 1px solid var(--rule); border-radius: 6px; padding: 9px; transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease); }
+.bank.busy { background: #e2e8ef; border-color: var(--c3); }
+.bank-n { font-family: var(--mono); font-size: 9px; letter-spacing: .1em; color: var(--faint); margin-bottom: 6px; }
+.bank.busy .bank-n { color: var(--c3); }
+.bank-s { font-family: var(--mono); font-size: 10px; color: var(--faint); text-align: center; padding: 5px 3px; border: 1px dashed var(--rule); border-radius: 3px; }
+.bank.busy .bank-s { border-style: solid; border-color: var(--c3); color: var(--c3); font-weight: 600; }
+
+/* ---------- misconceptions, hedges, sources ---------- */
+.wrong { border-left: 2px solid var(--rule); padding-left: 15px; margin: 0 0 20px; }
+.wrong-c { font-family: var(--mono); font-size: 11px; color: var(--c2); letter-spacing: .03em; margin: 0 0 5px; }
+.wrong-c::before { content: "\2717  "; }
+.wrong p { margin: 0; font-size: .95rem; color: var(--muted); }
+
+.hedge { font-size: .92rem; color: var(--muted); border: 1px dashed var(--rule); border-radius: 6px; padding: 12px 14px; margin: 20px 0; }
+.hedge b { font-family: var(--mono); font-size: 10px; letter-spacing: .13em; text-transform: uppercase; color: var(--faint); display: block; margin-bottom: 4px; }
+
+ul { margin: 0 0 15px; padding-left: 19px; }
+li { margin-bottom: 6px; }
+.srcs { list-style: none; padding: 0; font-size: .93rem; }
+.srcs li { margin-bottom: 11px; padding-left: 14px; border-left: 2px solid var(--rule); }
+.srcs span { display: block; font-size: .85rem; color: var(--faint); }
 
 /* ---------- recall ---------- */
-.recall{border-top:1px solid var(--rule);padding-top:34px}
-details{border:1px solid var(--rule);border-radius:8px;background:var(--panel);margin-bottom:9px;overflow:hidden}
-summary{
-  cursor:pointer;padding:14px 16px;font-weight:500;font-size:.97rem;list-style:none;
-  display:flex;gap:11px;align-items:flex-start;transition:background .15s;
+.recall { padding: 8px 0 44px; }
+details { border: 1px solid var(--rule); border-radius: 6px; margin-bottom: 8px; overflow: hidden; }
+summary {
+  cursor: pointer; padding: 14px 15px; font-weight: 500; font-size: .96rem; list-style: none;
+  display: flex; gap: 11px; align-items: flex-start; min-height: 44px;
+  transition: background var(--dur) var(--ease);
 }
-summary:hover{background:var(--rule-soft)}
-summary::-webkit-details-marker{display:none}
-summary::before{content:"+";font-family:var(--mono);color:var(--hot);font-weight:600;flex-shrink:0;line-height:1.5}
-details[open] summary::before{content:"−"}
-details[open] summary{background:var(--rule-soft)}
-.ans{padding:2px 16px 16px 40px;font-size:.94rem;color:var(--ink-soft);border-top:1px solid var(--rule-soft);padding-top:14px}
-.ans p:last-child{margin-bottom:0}
+summary:hover { background: var(--rule); }
+summary::-webkit-details-marker { display: none; }
+summary::before { content: "+"; font-family: var(--mono); color: var(--c2); font-weight: 600; flex-shrink: 0; line-height: 1.5; }
+details[open] summary::before { content: "\2212"; }
+details[open] summary { background: var(--rule); }
+.ans { padding: 13px 15px 15px 37px; font-size: .93rem; color: var(--muted); border-top: 1px solid var(--rule); }
+.ans p:last-child { margin-bottom: 0; }
 
 /* ---------- footer ---------- */
-footer{border-top:1px solid var(--rule);background:var(--panel)}
-.foot-in{
-  max-width:1180px;margin:0 auto;padding:24px 28px;display:flex;justify-content:space-between;
-  gap:16px;flex-wrap:wrap;font-family:var(--mono);font-size:11.5px;
-}
-.foot-in a{color:var(--ink-soft);text-decoration-color:var(--rule)}
-.foot-in a:hover{color:var(--hot)}
+footer { border-top: 1px solid var(--rule); }
+.foot { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; font-family: var(--mono); font-size: 12px; padding: 20px 0 34px; }
+.foot a { color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--rule); }
+.foot a:hover { color: var(--c1); border-color: var(--c1); }
 
-/* ---------- responsive ---------- */
-@media (max-width:1000px){
-  .track{grid-template-columns:1fr;gap:0;padding-bottom:70px}
-  .chip-wrap{
-    position:sticky;top:0;order:-1;padding-top:0;z-index:5;
-    background:var(--paper);padding-bottom:10px;margin:0 -28px;
-    padding-left:28px;padding-right:28px;border-bottom:1px solid var(--rule);
+/* ==========================================================
+   900px — one column. The pane un-sticks and drops in directly
+   after the section that introduces the row buffer, so no prose
+   refers to a diagram that is not yet on screen.
+   ========================================================== */
+@media (max-width: 900px) {
+  .body { grid-template-columns: 1fr; }
+  .col-a { grid-column: 1; grid-row: 1; }
+  .pane  { grid-column: 1; grid-row: 2; position: static; margin-bottom: 44px; }
+  .col-b { grid-column: 1; grid-row: 3; }
+  .col-a, .col-b, .pane { max-width: 68ch; }
+
+  /* touch targets stay 44px; the array scrolls inside its own bounds */
+  .grid, .sense, .buf { grid-template-columns: 38px repeat(8, 44px); }
+  .cell { min-width: 44px; min-height: 44px; font-size: 11px; }
+  .lat { height: 30px; }
+  .arr-wrap::after {
+    content: ""; position: absolute; top: 0; right: 0; bottom: 0; width: 24px;
+    background: linear-gradient(90deg, rgba(250,248,243,0), var(--bg));
+    pointer-events: none;
   }
-  .chip{padding:12px}
-  .cell{font-size:0}
-  .grid,.sense,.buf{grid-template-columns:33px repeat(8,1fr);gap:3px}
-  .buf-l,.sense-l{font-size:7.5px;padding-right:3px}
-  .lat{height:20px;font-size:9px}
-  .say{min-height:44px;font-size:10.5px;padding:8px 10px}
-  .tally{gap:11px}
-  .tally b{font-size:14px}
-  .prose{padding-top:30px}
+  .btn { padding: 12px 13px; }
+  summary { padding: 15px; }
 }
-@media (max-width:560px){
-  body{font-size:16px}
-  .top{padding:32px 20px 24px}
-  .track{padding-left:20px;padding-right:20px}
-  .chip-wrap{margin:0 -20px;padding-left:20px;padding-right:20px}
-  .banks{grid-template-columns:repeat(2,1fr)}
-  .foot-in{padding:20px}
-  .seg{font-size:8px}
-}
-@media (prefers-reduced-motion:reduce){
-  html{scroll-behavior:auto}
-  *{transition-duration:.001ms!important;animation-duration:.001ms!important}
+
+@media (max-width: 560px) {
+  h1 { font-size: 1.95rem; }
+  .what { font-size: 1.02rem; }
+  .title-block { padding: 30px 0 26px; }
+  .banks { grid-template-columns: repeat(2,1fr); }
+  .seg { font-size: 8px; }
 }
 </style>
 </head>
 <body>
 
-<div class="top">
-  <p class="kicker">Concept</p>
-  <h1>The DRAM row buffer</h1>
-  <p class="what">
-    A strip of latches beside every DRAM array that holds one row at a time. It exists because
-    reading a DRAM cell destroys the charge that held the bit, and it is the reason the cost of a
-    memory access depends on which address you touched last.
-  </p>
-  <div class="meta">
-    <span>learned <b>2026-08-14</b></span>
-    <span>reviewed <b>2026-08-14</b></span>
-    <span>confidence <b class="conf">exploring</b></span>
-  </div>
-  <p class="notice">
-    Learning notes — written while figuring this out. May contain errors. Corrections welcome.
-  </p>
-</div>
+<div class="page">
 
-<div class="track">
-
-  <!-- ============ THE PROSE ============ -->
-  <div class="prose">
-
-    <section data-phase="idle">
-      <h2>The name oversells it</h2>
-      <p>
-        <em>Random access memory</em> implies every address costs the same to reach. It doesn't.
-        Two reads of the same size, nanoseconds apart, can differ by roughly threefold depending on
-        nothing more than where the previous read landed.
-      </p>
-      <p>
-        The whole explanation sits in one strip of circuitry, and one awkward physical fact.
-      </p>
-    </section>
-
-    <section data-phase="cell">
-      <h2>One bit, one capacitor</h2>
-      <p>
-        A DRAM cell is a transistor and a tiny capacitor. Charged is 1, empty is 0. Billions of them
-        are etched in a grid of rows and columns. Two things follow, and the second one drives
-        everything on this page.
-      </p>
-      <p>
-        <strong>Charge leaks.</strong> It drains over milliseconds, so the controller re-reads and
-        rewrites every row thousands of times a second just to hold the data still. That is the
-        <em>dynamic</em> in DRAM.
-      </p>
-      <p>
-        <strong>Reading destroys.</strong> Detecting whether a capacitor holds charge drains it. There
-        is no way to peek. Every read is also an erase.
-      </p>
-    </section>
-
-    <section data-phase="activate">
-      <h2>So the chip can't read one bit</h2>
-      <p>
-        Since sensing wrecks the cell, the chip cannot pick out a single capacitor and leave the rest
-        alone. Instead it <span class="hot">activates</span> the entire row at once: one sense
-        amplifier per column detects each faint charge, resolves it to a clean 1 or 0, and latches it.
-      </p>
-      <p>
-        Those latches are the <span class="cool">row buffer</span>. It holds roughly one to two
-        kilobytes, one row's worth. Once loaded, it is the only intact copy of that data anywhere on
-        the chip.
-      </p>
-      <p>
-        The buffer is built from cross-coupled transistors, the same static circuits used in SRAM, not
-        from more capacitors. That isn't a design preference. If the buffer were capacitors, loading
-        it or reading it would destroy the data again and the problem would simply move up one level.
-        A DRAM chip is physically a hybrid: a dense capacitor array with a thin SRAM-like strip along
-        its edge.
-      </p>
-    </section>
-
-    <section data-phase="read">
-      <h2>Then reads are cheap, until they aren't</h2>
-      <p>
-        With a row latched, the column decoder pulls the requested bits straight out of the buffer.
-        Nothing touches the cell array. Ask for another column in the same row and you pay only this
-        step again.
-      </p>
-      <p>
-        That is a <span class="cool">page hit</span> — "page" being the industry's name for whatever
-        row currently sits in the buffer.
-      </p>
-    </section>
-
-    <section data-phase="precharge">
-      <h2>The bill comes when you leave the row</h2>
-      <p>
-        The original capacitors were drained during activation. Before a different row can open, the
-        buffer's contents must be written back into them. That restore is called
-        <span class="hot">precharge</span>, and it is the hidden cost nobody expects.
-      </p>
-      <p>
-        So a <span class="hot">page miss</span> is three operations where a hit was one: precharge the
-        open row, activate the new one, then read the column.
-      </p>
-
-      <figure>
-        <figcaption>Same read, two histories · DDR4-3200 CL22-22-22</figcaption>
-        <div class="tl">
-          <div class="tl-h"><span>Page hit</span><em>~13.75 ns</em></div>
-          <div class="tl-bar">
-            <div class="seg cl" style="flex-grow:1">CL · column read</div>
-            <div class="seg pad" style="flex-grow:2"></div>
-          </div>
-        </div>
-        <div class="tl">
-          <div class="tl-h"><span>Page miss</span><em>~41.25 ns</em></div>
-          <div class="tl-bar">
-            <div class="seg rp" style="flex-grow:1">tRP · restore</div>
-            <div class="seg rcd" style="flex-grow:1">tRCD · activate</div>
-            <div class="seg cl" style="flex-grow:1">CL · read</div>
-          </div>
-        </div>
-      </figure>
-
-      <div class="hedge">
-        <b>How confident is this</b>
-        The three-phase structure is how DRAM genuinely works and is stated in the JEDEC standards.
-        The specific numbers are one common DDR4-3200 CL22-22-22 module, where the three timings happen
-        to be equal, making a miss almost exactly three hits. That symmetry is a convenience of this
-        particular part, not a law. Other kits and DDR5 shift the ratio, and a real access also carries
-        controller queueing and bus time that this diagram leaves out.
-      </div>
-    </section>
-
-    <section data-phase="hit">
-      <h2>Which addresses land in the same row</h2>
-      <p>
-        A physical address is a plain binary number, but the controller never uses it whole. It slices
-        it into fields, each routing to different hardware.
-      </p>
-
-      <figure>
-        <figcaption>Address decode · illustrative widths</figcaption>
-        <div class="addr">
-          <div class="af r"><b>ROW</b>selects the page</div>
-          <div class="af b"><b>BANK</b>which array</div>
-          <div class="af c"><b>COLUMN</b>within the page</div>
-          <div class="af o"><b>OFF</b>byte</div>
-        </div>
-        <div class="bits" id="bits">
-          <div class="r">0000</div><div class="b">00</div><div class="c">0000</div><div class="o">00</div>
-        </div>
-        <div class="slider">
-          <label for="a">Address</label>
-          <input type="range" id="a" min="0" max="4095" value="0" step="1">
-          <output id="ao">0</output>
-        </div>
-        <p style="font-family:var(--mono);font-size:11px;color:var(--ink-soft);margin:12px 0 0" id="adec"></p>
-      </figure>
-
-      <p>
-        Row bits sit at the <strong>high</strong> end, column bits at the <strong>low</strong> end.
-        Drag the slider by ones and the column field churns while the row field sits still. Sequential
-        access keeps landing in the open page by construction, not by luck.
-      </p>
-      <p>
-        Random access does the opposite. Jump unpredictably and the row field changes almost every
-        time, so nearly every read pays the full three phases.
-      </p>
-    </section>
-
-    <section data-phase="banks">
-      <h2>Why one buffer would be unbearable</h2>
-      <p>
-        A chip isn't one grid. It is carved into independent <span class="deep">banks</span>, typically
-        eight to sixteen, each with its own array and its own row buffer. Different rows can be open in
-        different banks at the same time.
-      </p>
-      <p>
-        This is what makes the whole arrangement survivable. With a single buffer, every miss would
-        stall on the full restore-then-activate sequence with nothing else able to proceed. With banks,
-        the controller reads from one while activating another and overlaps the expensive part instead
-        of waiting through it.
-      </p>
-
-      <figure>
-        <figcaption>Bank-level parallelism</figcaption>
-        <div class="banks" id="banks"></div>
-        <div class="chip-btns" style="margin-top:12px">
-          <button class="btn btn-solid" id="bgo">Issue requests</button>
-          <button class="btn" id="bstop">Stop</button>
-        </div>
-      </figure>
-
-      <p>
-        Real systems stack more on top: multiple <strong>ranks</strong> per <strong>channel</strong>,
-        multiple channels per socket. Memory bandwidth scales with channel count because it is not one
-        pipe getting wider, it is more buffers kept busy at once.
-      </p>
-    </section>
-
-    <section data-phase="idle">
-      <h2>Three things it is not</h2>
-
-      <div class="wrong">
-        <p class="wrong-c">The row buffer is a DRAM cache</p>
-        <p>
-          It isn't, and "DRAM cache" already means something else: fast DRAM placed in front of a
-          slower memory tier and used as a genuine cache with its own eviction policy. The row buffer
-          makes no decisions. It holds whichever row was opened last, and loses it the moment another
-          row in that bank is needed. No policy, no choice, no retention.
-        </p>
-      </div>
-
-      <div class="wrong">
-        <p class="wrong-c">A DRAM page is an OS page</p>
-        <p>
-          Unrelated concepts wearing the same word. A DRAM page is the row currently sitting in the
-          buffer, one to two kilobytes, a property of the chip. An OS page is a unit of virtual address
-          space, typically four kilobytes, a property of the kernel and MMU. Neither implies the other.
-        </p>
-      </div>
-
-      <div class="wrong">
-        <p class="wrong-c">Registers are the top of the cache hierarchy</p>
-        <p>
-          Registers are a separate tier above L1, not the smallest cache. The distinction is who
-          decides: cache contents are chosen by hardware guessing what you'll need next, while
-          registers are assigned explicitly by the compiler or JIT. Collapsing them into one box hides
-          that difference, which is the interesting part.
-        </p>
-      </div>
-    </section>
-
-    <section data-phase="idle">
-      <h2>What this changes downstream</h2>
-      <p>
-        Locality is not a software convention. It is a physical property of the address, and the same
-        principle repeats at three distances from the CPU: cache lines, row buffers, disk blocks.
-        Contiguous access wins at every one of them, for structurally the same reason.
-      </p>
-      <p>
-        That is the mechanism under a set of rules usually taught as folklore. Columnar layouts like
-        Arrow and Parquet keep scans contiguous. Broadcasting a small table avoids a shuffle, which is
-        random access at cluster scale. Hash joins and pointer chasing through row objects are the
-        pathological case, forcing an activation nearly every probe.
-      </p>
-      <div class="hedge">
-        <b>Model, not mechanism</b>
-        Treating a Spark shuffle as "random access, scaled up" is a useful analogy and nothing more.
-        Shuffle cost is dominated by network and serialisation, not DRAM timings. The shared idea is
-        that unpredictable access defeats prefetching and batching at every layer. The hardware is not
-        literally what's slow when your job spills.
-      </div>
-    </section>
-
-    <section data-phase="idle">
-      <h2>Where to verify this</h2>
-      <ul class="srcs">
-        <li>
-          JEDEC JESD79-4 (DDR4) and JESD79-5 (DDR5)
-          <span>The authoritative definition of ACTIVATE, READ, PRECHARGE and the timing parameters. Free with registration.</span>
-        </li>
-        <li>
-          Micron DDR4 SDRAM datasheets
-          <span>Per-part timing tables and bank counts. The concrete numbers this page generalises from.</span>
-        </li>
-        <li>
-          Jacob, Ng &amp; Wang, <em>Memory Systems: Cache, DRAM, Disk</em>
-          <span>Textbook treatment of row buffer management and scheduling policies.</span>
-        </li>
-        <li>
-          Drepper, <em>What Every Programmer Should Know About Memory</em> (LWN, 2007)
-          <span>Dated on specifics, still the clearest bridge from this hardware to code that runs on it.</span>
-        </li>
-        <li>
-          Onur Mutlu's computer architecture lectures
-          <span>Publicly posted, and go considerably deeper on scheduling and row buffer policy.</span>
-        </li>
-      </ul>
-    </section>
-
-    <!-- ============ RECALL ============ -->
-    <section class="recall">
-      <h2>Recall</h2>
-
-      <details>
-        <summary>Reading a DRAM cell destroys its charge. Work forward from that one fact and derive why leaving a row costs more than staying in it.</summary>
-        <div class="ans">
-          <p>
-            If sensing drains the cell, the buffer holds the only surviving copy after activation. The
-            array itself is now blank for that row. So the chip cannot simply abandon it and open
-            another, because the data would be gone. It must write the buffer back into the capacitors
-            first.
-          </p>
-          <p>
-            That restore is precharge. Staying in the row costs one column read. Leaving costs a
-            restore, an activation, and then the column read.
-          </p>
-        </div>
-      </details>
-
-      <details>
-        <summary>Why can the row buffer not be built from the same capacitor cells as the array it serves?</summary>
-        <div class="ans">
-          <p>
-            Because it would inherit the exact problem it exists to solve. Loading capacitors would
-            require sensing them, and reading them again would destroy them again, so you would need a
-            second buffer to hold the first buffer's contents, and so on.
-          </p>
-          <p>
-            Latches break the regress: they hold a stable electrical state, survive unlimited reads,
-            and never need refreshing. The cost is density, which is why the buffer is one row wide
-            rather than a second array.
-          </p>
-        </div>
-      </details>
-
-      <details>
-        <summary>Suppose row bits were placed at the low-order end of the address and column bits at the high end. What happens to a sequential scan, and why?</summary>
-        <div class="ans">
-          <p>
-            It inverts to worst case. Incrementing the address would step the row field on every
-            access while the column field stayed put, so consecutive addresses would land in different
-            rows. Every read becomes a page miss.
-          </p>
-          <p>
-            The current ordering is chosen precisely to avoid that. Sequential access exhausts all
-            columns in a row before crossing into the next one, which is why "sequential is fast" is
-            arranged by the controller rather than being an accident.
-          </p>
-        </div>
-      </details>
-
-      <details>
-        <summary>Someone describes the row buffer as a small cache in front of the DRAM array. Where exactly does that analogy fail?</summary>
-        <div class="ans">
-          <p>
-            A cache retains data across accesses according to a policy, decides what to evict, and can
-            hold unrelated items simultaneously. The row buffer does none of that. It holds exactly one
-            row, chosen by whatever address arrived last, and loses it unconditionally when another row
-            in that bank is requested.
-          </p>
-          <p>
-            It also isn't optional. A cache is an optimisation you could remove; the buffer is
-            structurally required because reads are destructive. Separately, "DRAM cache" is already
-            taken as a term for fast DRAM fronting a slower tier, so the analogy collides with real
-            vocabulary.
-          </p>
-        </div>
-      </details>
-
-      <details>
-        <summary>Reconstruct the argument for why chips have 8 to 16 banks rather than one large array with one buffer.</summary>
-        <div class="ans">
-          <p>
-            With a single buffer, only one row can be open per chip, so every miss serialises: restore,
-            activate, read, with the entire chip idle throughout. Latency would be exposed in full on
-            every row change.
-          </p>
-          <p>
-            Independent banks each have their own array and buffer, so the controller can activate a
-            row in one while reading from another, hiding the slow phase behind useful work. The gain
-            is throughput via overlap rather than any single access getting faster.
-          </p>
-        </div>
-      </details>
-    </section>
-
+  <div class="strip measure">
+    <a href="../../">learn/</a>
+    <time datetime="2026-08-15">2026-08-15</time>
   </div>
 
-  <!-- ============ THE CHIP ============ -->
-  <div class="chip-wrap">
-    <div class="chip">
-      <div class="chip-h">
-        <span>Bank 0 · 4 × 8</span>
-        <span id="phase">idle</span>
+  <div class="title-block measure">
+    <h1>The DRAM row buffer</h1>
+    <p class="what">
+      A strip of latches beside every DRAM array that holds one row at a time, and the reason the cost
+      of a memory access depends on which address you touched last.
+    </p>
+  </div>
+
+  <div class="body">
+
+    <div class="col-a">
+      <section>
+        <h2>The name oversells it</h2>
+        <p>
+          <em>Random access memory</em> implies every address costs the same to reach. It doesn't. Two
+          reads of the same size, nanoseconds apart, can differ by roughly threefold depending on
+          nothing more than where the previous read landed.
+        </p>
+        <p>The whole explanation sits in one strip of circuitry, and one awkward physical fact.</p>
+      </section>
+
+      <section>
+        <h2>One bit, one capacitor</h2>
+        <p>
+          A DRAM cell is a transistor and a tiny capacitor. Charged is 1, empty is 0. Billions of them
+          are etched in a grid of rows and columns. Two things follow, and the second drives everything
+          below.
+        </p>
+        <p>
+          <strong>Charge leaks.</strong> It drains over milliseconds, so the controller re-reads and
+          rewrites every row thousands of times a second just to hold the data still. That is the
+          <em>dynamic</em> in DRAM.
+        </p>
+        <p>
+          <strong>Reading destroys.</strong> Detecting whether a capacitor holds charge drains it.
+          There is no way to peek. Every read is also an erase.
+        </p>
+      </section>
+
+      <section>
+        <h2>So the chip cannot read one bit</h2>
+        <p>
+          Since sensing wrecks the cell, the chip cannot pick out a single capacitor and leave its
+          neighbours alone. Instead it <span class="k2">activates</span> the entire row at once: one
+          sense amplifier per column detects each faint charge, resolves it to a clean 1 or 0, and
+          latches it.
+        </p>
+        <p>
+          Those latches are the <span class="k1">row buffer</span>. It holds roughly one to two
+          kilobytes, one row's worth. Once loaded, it is the only intact copy of that data anywhere on
+          the chip.
+        </p>
+        <p>
+          The buffer is built from cross-coupled transistors, the same static circuits used in SRAM,
+          not from more capacitors. That is not a preference. If the buffer were capacitors, loading it
+          or reading it would destroy the data again and the problem would move up one level. A DRAM
+          chip is physically a hybrid: a dense capacitor array with a thin SRAM-like strip along its
+          edge.
+        </p>
+      </section>
+    </div>
+
+    <aside class="pane">
+      <div class="chip">
+        <div class="chip-h">
+          <span>Bank 0 &middot; 4 &times; 8</span>
+          <span id="phase">idle</span>
+        </div>
+
+        <div class="arr-wrap">
+          <div class="arr-scroll">
+            <div class="grid" id="grid" role="group" aria-label="DRAM cell array. Select a cell to read that address."></div>
+            <div class="sense" id="sense"><div class="sense-l">sense<br>amps</div></div>
+            <div class="buf" id="buf"><div class="buf-l">row<br>buffer</div></div>
+          </div>
+        </div>
+
+        <div class="legend">
+          <span><i class="sw sw1"></i>latched &middot; hit</span>
+          <span><i class="sw sw2"></i>activate &middot; restore &middot; miss</span>
+          <span><i class="sw sw3"></i>banks</span>
+        </div>
+
+        <p class="say" id="say">Select any cell. Watch what changes when you stay in a row, and when you leave it.</p>
+
+        <div class="tally">
+          <span class="h">hits<b id="th">0</b></span>
+          <span class="m">misses<b id="tm">0</b></span>
+          <span>est. cost<b id="tc">0 ns</b></span>
+        </div>
+
+        <div class="btns">
+          <button class="btn btn-solid" id="seq" type="button">Scan 8 sequential</button>
+          <button class="btn" id="rnd" type="button">8 random</button>
+          <button class="btn" id="clr" type="button">Reset</button>
+        </div>
       </div>
+    </aside>
 
-      <div class="grid" id="grid" role="group" aria-label="DRAM cell array, click a cell to access it"></div>
+    <div class="col-b">
+      <section>
+        <h2>Then reads are cheap, until they are not</h2>
+        <p>
+          With a row latched, the column decoder pulls the requested bits straight out of the buffer.
+          Nothing touches the cell array. Ask for another column in the same row and you pay only this
+          step again.
+        </p>
+        <p>
+          That is a <span class="k1">page hit</span>, "page" being the industry's name for whichever
+          row currently sits in the buffer.
+        </p>
+      </section>
 
-      <div class="sense" id="sense">
-        <div class="sense-l">sense<br>amps</div>
-      </div>
+      <section>
+        <h2>The bill comes when you leave the row</h2>
+        <p>
+          The original capacitors were drained during activation. Before a different row can open, the
+          buffer's contents must be written back into them. That restore is called
+          <span class="k2">precharge</span>, and it is the cost nobody expects.
+        </p>
+        <p>
+          So a <span class="k2">page miss</span> is three operations where a hit was one: precharge the
+          open row, activate the new one, then read the column.
+        </p>
 
-      <div class="buf" id="buf">
-        <div class="buf-l">row<br>buffer</div>
-      </div>
+        <figure>
+          <figcaption>Same read, two histories &middot; DDR4-3200 CL22-22-22</figcaption>
+          <div class="tl">
+            <div class="tl-h"><span>Page hit</span><em>~13.75 ns</em></div>
+            <div class="tl-bar">
+              <div class="seg c" style="flex-grow:1">CL &middot; column read</div>
+              <div class="seg pad" style="flex-grow:2"></div>
+            </div>
+          </div>
+          <div class="tl">
+            <div class="tl-h"><span>Page miss</span><em>~41.25 ns</em></div>
+            <div class="tl-bar">
+              <div class="seg a" style="flex-grow:1">tRP &middot; restore</div>
+              <div class="seg b" style="flex-grow:1">tRCD &middot; activate</div>
+              <div class="seg c" style="flex-grow:1">CL &middot; read</div>
+            </div>
+          </div>
+        </figure>
 
-      <p class="say" id="say">Click any cell. Watch what changes when you stay in a row and when you leave it.</p>
+        <div class="hedge">
+          <b>How confident is this</b>
+          The three-phase structure is how DRAM genuinely works and is defined in the JEDEC standards.
+          The numbers are one common DDR4-3200 CL22-22-22 module, where the three timings happen to be
+          equal, making a miss almost exactly three hits. That symmetry belongs to this particular
+          part, not to DRAM in general. Other kits and DDR5 shift the ratio, and a real access also
+          carries controller queueing and bus time this diagram leaves out.
+        </div>
+      </section>
 
-      <div class="tally">
-        <span class="h">hits<b id="th">0</b></span>
-        <span class="m">misses<b id="tm">0</b></span>
-        <span>est. cost<b id="tc">0 ns</b></span>
-      </div>
+      <section>
+        <h2>Which addresses land in the same row</h2>
+        <p>
+          A physical address is a plain binary number, but the controller never uses it whole. It
+          slices it into fields, each routing to different hardware.
+        </p>
 
-      <div class="chip-btns">
-        <button class="btn btn-solid" id="seq">Scan 8 sequential</button>
-        <button class="btn" id="rnd">8 random</button>
-        <button class="btn" id="clr">Reset</button>
-      </div>
+        <figure>
+          <figcaption>Address decode &middot; illustrative widths</figcaption>
+          <div class="addr">
+            <div class="af r"><b>ROW</b>selects the page</div>
+            <div class="af b"><b>BANK</b>which array</div>
+            <div class="af c"><b>COLUMN</b>within the page</div>
+            <div class="af o"><b>OFF</b>byte</div>
+          </div>
+          <div class="bits" id="bits">
+            <div class="r">0000</div><div class="b">00</div><div class="c">0000</div><div class="o">00</div>
+          </div>
+          <div class="slider">
+            <label for="a">Address</label>
+            <input type="range" id="a" min="0" max="4095" value="0" step="1">
+            <output id="ao">0</output>
+          </div>
+          <p id="adec"></p>
+        </figure>
+
+        <p>
+          Row bits sit at the <strong>high</strong> end, column bits at the <strong>low</strong> end.
+          Drag by ones and the column field churns while the row field sits still. Sequential access
+          keeps landing in the open page by construction, not by luck.
+        </p>
+        <p>
+          Random access does the opposite. Jump unpredictably and the row field changes almost every
+          time, so nearly every read pays the full three phases.
+        </p>
+      </section>
+
+      <section>
+        <h2>Why one buffer would be unbearable</h2>
+        <p>
+          A chip is not one grid. It is carved into independent <span class="k3">banks</span>,
+          typically eight to sixteen, each with its own array and its own row buffer. Different rows
+          can be open in different banks at the same time.
+        </p>
+        <p>
+          This is what makes the arrangement survivable. With a single buffer, every miss would stall
+          on the full restore-then-activate sequence with nothing else able to proceed. With banks, the
+          controller reads from one while activating another and overlaps the expensive part instead of
+          waiting through it.
+        </p>
+
+        <figure>
+          <figcaption>Bank-level parallelism</figcaption>
+          <div class="banks" id="banks"></div>
+          <div class="btns">
+            <button class="btn btn-solid" id="bgo" type="button">Issue requests</button>
+            <button class="btn" id="bstop" type="button">Stop</button>
+          </div>
+        </figure>
+
+        <p>
+          Real systems stack more on top: multiple <strong>ranks</strong> per <strong>channel</strong>,
+          multiple channels per socket. Memory bandwidth scales with channel count because it is not
+          one pipe getting wider, it is more buffers kept busy at once.
+        </p>
+      </section>
+
+      <section>
+        <h2>Three things it is not</h2>
+
+        <div class="wrong">
+          <p class="wrong-c">The row buffer is a DRAM cache</p>
+          <p>
+            It is not, and "DRAM cache" already means something else: fast DRAM placed in front of a
+            slower memory tier and used as a genuine cache with its own eviction policy. The row buffer
+            makes no decisions. It holds whichever row was opened last and loses it the moment another
+            row in that bank is needed. No policy, no choice, no retention.
+          </p>
+        </div>
+
+        <div class="wrong">
+          <p class="wrong-c">A DRAM page is an OS page</p>
+          <p>
+            Unrelated concepts wearing the same word. A DRAM page is the row currently in the buffer,
+            one to two kilobytes, a property of the chip. An OS page is a unit of virtual address
+            space, typically four kilobytes, a property of the kernel and MMU. Neither implies the
+            other.
+          </p>
+        </div>
+
+        <div class="wrong">
+          <p class="wrong-c">Registers are the top of the cache hierarchy</p>
+          <p>
+            Registers are a separate tier above L1, not the smallest cache. The distinction is who
+            decides: cache contents are chosen by hardware guessing what comes next, while registers
+            are assigned explicitly by the compiler or JIT. Collapsing them into one box hides that
+            difference, which is the interesting part.
+          </p>
+        </div>
+      </section>
+
+      <section>
+        <h2>What this changes downstream</h2>
+        <p>
+          Locality is not a software convention. It is a physical property of the address, and the same
+          principle repeats at three distances from the CPU: cache lines, row buffers, disk blocks.
+          Contiguous access wins at every one of them for structurally the same reason.
+        </p>
+        <p>
+          That is the mechanism under a set of rules usually taught as folklore. Columnar layouts like
+          Arrow and Parquet keep scans contiguous. Broadcasting a small table avoids a shuffle. Hash
+          joins and pointer chasing through row objects are the pathological case, forcing an
+          activation on nearly every probe.
+        </p>
+        <div class="hedge">
+          <b>Model, not mechanism</b>
+          Treating a Spark shuffle as "random access, scaled up" is a useful analogy and nothing more.
+          Shuffle cost is dominated by network and serialisation, not DRAM timings. The shared idea is
+          that unpredictable access defeats prefetching and batching at every layer. The hardware is
+          not literally what is slow when a job spills.
+        </div>
+      </section>
+
+      <section>
+        <h2>Where to verify this</h2>
+        <ul class="srcs">
+          <li>
+            JEDEC JESD79-4 (DDR4) and JESD79-5 (DDR5)
+            <span>The authoritative definition of ACTIVATE, READ, PRECHARGE and the timing parameters. Free with registration.</span>
+          </li>
+          <li>
+            Micron DDR4 SDRAM datasheets
+            <span>Per-part timing tables and bank counts. The concrete numbers this page generalises from.</span>
+          </li>
+          <li>
+            Jacob, Ng &amp; Wang, <em>Memory Systems: Cache, DRAM, Disk</em>
+            <span>Textbook treatment of row buffer management and scheduling policies.</span>
+          </li>
+          <li>
+            Drepper, <em>What Every Programmer Should Know About Memory</em> (LWN, 2007)
+            <span>Dated on specifics, still the clearest bridge from this hardware to code that runs on it.</span>
+          </li>
+          <li>
+            Onur Mutlu's computer architecture lectures
+            <span>Publicly posted, and considerably deeper on scheduling and row buffer policy.</span>
+          </li>
+        </ul>
+      </section>
     </div>
   </div>
+
+  <section class="recall measure">
+    <h2>Recall</h2>
+
+    <details>
+      <summary>Reading a DRAM cell destroys its charge. Work forward from that one fact and derive why leaving a row costs more than staying in it.</summary>
+      <div class="ans">
+        <p>
+          If sensing drains the cell, the buffer holds the only surviving copy after activation. The
+          array itself is now blank for that row. So the chip cannot simply abandon it and open
+          another, because the data would be gone. It must write the buffer back into the capacitors
+          first.
+        </p>
+        <p>
+          That restore is precharge. Staying in the row costs one column read. Leaving costs a restore,
+          an activation, and then the column read.
+        </p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Why can the row buffer not be built from the same capacitor cells as the array it serves?</summary>
+      <div class="ans">
+        <p>
+          Because it would inherit the exact problem it exists to solve. Loading capacitors requires
+          sensing them, and reading them again would destroy them again, so you would need a second
+          buffer to hold the first buffer's contents, and so on.
+        </p>
+        <p>
+          Latches break the regress: they hold a stable electrical state, survive unlimited reads, and
+          never need refreshing. The cost is density, which is why the buffer is one row wide rather
+          than a second array.
+        </p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Suppose row bits sat at the low-order end of the address and column bits at the high end. What happens to a sequential scan, and why?</summary>
+      <div class="ans">
+        <p>
+          It inverts to worst case. Incrementing the address would step the row field on every access
+          while the column field stayed put, so consecutive addresses would land in different rows.
+          Every read becomes a page miss.
+        </p>
+        <p>
+          The real ordering is chosen precisely to avoid that. Sequential access exhausts all columns
+          in a row before crossing into the next one, which is why "sequential is fast" is arranged by
+          the controller rather than being an accident.
+        </p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Someone describes the row buffer as a small cache in front of the DRAM array. Where exactly does that analogy fail?</summary>
+      <div class="ans">
+        <p>
+          A cache retains data across accesses according to a policy, decides what to evict, and holds
+          unrelated items at once. The row buffer does none of that. It holds exactly one row, chosen
+          by whichever address arrived last, and loses it unconditionally when another row in that bank
+          is requested.
+        </p>
+        <p>
+          It is also not optional. A cache is an optimisation you could remove; the buffer is
+          structurally required because reads are destructive. Separately, "DRAM cache" is already
+          taken as a term for fast DRAM fronting a slower tier, so the analogy collides with real
+          vocabulary.
+        </p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Reconstruct the argument for why chips carry 8 to 16 banks rather than one large array with one buffer.</summary>
+      <div class="ans">
+        <p>
+          With a single buffer, only one row can be open per chip, so every miss serialises: restore,
+          activate, read, with the entire chip idle throughout. Latency would be exposed in full on
+          every row change.
+        </p>
+        <p>
+          Independent banks each have their own array and buffer, so the controller can activate a row
+          in one while reading from another, hiding the slow phase behind useful work. The gain is
+          throughput through overlap rather than any single access getting faster.
+        </p>
+      </div>
+    </details>
+  </section>
 
 </div>
 
 <footer>
-  <div class="foot-in">
-    <a href="https://github.com/dinith-heshan/learn/issues/new?title=Correction:%20dram-row-buffer&labels=correction">Suggest a correction</a>
-    <a href="../../">← back to the index</a>
+  <div class="page">
+    <div class="foot measure">
+      <a href="https://github.com/dinith-heshan/learn/issues/new?title=Correction:%20dram-row-buffer&labels=correction">Suggest a correction</a>
+      <a href="../../">back to learn/</a>
+    </div>
   </div>
 </footer>
 
 <script>
 (function(){
 "use strict";
-var ROWS=4,COLS=8,HIT=13.75,MISS=41.25;
+var COLS=8,ROWS=4,HIT=13.75,MISS=41.25,STEP=340;
 var grid=document.getElementById('grid'),sense=document.getElementById('sense'),buf=document.getElementById('buf');
 var say=document.getElementById('say'),phase=document.getElementById('phase');
 var th=document.getElementById('th'),tm=document.getElementById('tm'),tc=document.getElementById('tc');
-var openRow=null,hits=0,misses=0,cells=[],amps=[],lats=[],busy=false;
+var openRow=null,hits=0,misses=0,cells=[],amps=[],lats=[],rowLbl=[],busy=false;
 
-/* build array */
-grid.appendChild(el('div','rl',''));
-for(var c=0;c<COLS;c++)grid.appendChild(el('div','cl','c'+c));
+function mk(t,c,x){var e=document.createElement(t);e.className=c;e.innerHTML=x;return e;}
+
+grid.appendChild(mk('div','rl',''));
+for(var c=0;c<COLS;c++)grid.appendChild(mk('div','cl','c'+c));
 for(var r=0;r<ROWS;r++){
-  grid.appendChild(el('div','rl','r'+r));
+  var lb=mk('div','rl','r'+r);grid.appendChild(lb);rowLbl.push(lb);
   for(var c2=0;c2<COLS;c2++){
     (function(rr,cc){
       var b=document.createElement('button');
@@ -694,11 +731,15 @@ for(var r=0;r<ROWS;r++){
     })(r,c2);
   }
 }
-for(var i=0;i<COLS;i++){var a=el('div','amp','');sense.appendChild(a);amps.push(a);}
-for(var j=0;j<COLS;j++){var l=el('div','lat','·');buf.appendChild(l);lats.push(l);}
+for(var i=0;i<COLS;i++){var a=mk('div','amp','');sense.appendChild(a);amps.push(a);}
+for(var j=0;j<COLS;j++){var l=mk('div','lat','&middot;');buf.appendChild(l);lats.push(l);}
 
-function el(t,c,x){var e=document.createElement(t);e.className=c;e.innerHTML=x;return e;}
-function setPhase(t,col){phase.textContent=t;phase.style.color=col||'var(--hot)';}
+function setPhase(t,v){phase.textContent=t;phase.style.color=v||'var(--faint)';}
+
+/* the open row is marked in the label too, so state never rests on colour alone */
+function marks(r){
+  for(var i=0;i<ROWS;i++)rowLbl[i].textContent=(i===r?'\u25B8r'+i:'r'+i);
+}
 
 function access(r,c,quiet){
   if(busy)return;
@@ -712,26 +753,27 @@ function access(r,c,quiet){
     x.classList.toggle('open',Math.floor(i/COLS)===r);
   });
   cells[addr].classList.add('sel');
+  marks(r);
 
   if(hit){
     amps.forEach(function(a){a.classList.remove('on');});
     lats.forEach(function(l,i){l.classList.toggle('out',i===c);});
-    setPhase('read','var(--cool)');
-    if(!quiet)say.innerHTML='<b>'+addr+'</b> · row '+r+', col '+c+'<br><span class="tag-hit">Page hit.</span> Row already latched. Column read only, about '+HIT+' ns.';
+    setPhase('read','var(--c1)');
+    if(!quiet)say.innerHTML='<b>'+addr+'</b> &middot; row '+r+', col '+c+'<br><span class="t-hit">Page hit.</span> Row already latched. Column read only, about '+HIT+' ns.';
   }else{
     busy=true;
-    setPhase('precharge → activate');
+    setPhase('precharge \u2192 activate','var(--c2)');
     amps.forEach(function(a){a.classList.add('on');});
     cells.forEach(function(x,i){if(Math.floor(i/COLS)===r&&i!==addr)x.classList.add('drain');});
     lats.forEach(function(l,i){l.classList.remove('out');l.classList.add('live');l.textContent=r*COLS+i;});
-    if(!quiet)say.innerHTML='<b>'+addr+'</b> · row '+r+', col '+c+'<br><span class="tag-miss">Page miss.</span> Old row restored, row '+r+' sensed into the buffer, then column '+c+' read. About '+MISS+' ns.';
+    if(!quiet)say.innerHTML='<b>'+addr+'</b> &middot; row '+r+', col '+c+'<br><span class="t-miss">Page miss.</span> Old row restored, row '+r+' sensed into the buffer, then column '+c+' read. About '+MISS+' ns.';
     setTimeout(function(){
       amps.forEach(function(a){a.classList.remove('on');});
       cells.forEach(function(x){x.classList.remove('drain');});
       lats.forEach(function(l,i){l.classList.toggle('out',i===c);});
-      setPhase('read','var(--cool)');
+      setPhase('read','var(--c1)');
       busy=false;
-    },520);
+    },STEP);
   }
   openRow=r;
 }
@@ -739,19 +781,23 @@ function access(r,c,quiet){
 function burst(list,label){
   var i=0;
   (function step(){
-    if(i>=list.length){
-      say.innerHTML=label;
-      return;
-    }
-    if(busy){setTimeout(step,120);return;}
+    if(i>=list.length){say.innerHTML=label;return;}
+    if(busy){setTimeout(step,80);return;}
     var a=list[i++];
     access(Math.floor(a/COLS),a%COLS,true);
-    setTimeout(step,300);
+    setTimeout(step,240);
   })();
 }
+function reset(){
+  openRow=null;hits=0;misses=0;busy=false;
+  th.textContent='0';tm.textContent='0';tc.textContent='0 ns';
+  cells.forEach(function(x){x.classList.remove('open','sel','drain');});
+  amps.forEach(function(a){a.classList.remove('on');});
+  lats.forEach(function(l){l.classList.remove('live','out');l.innerHTML='&middot;';});
+  marks(-1);setPhase('idle');
+}
 document.getElementById('seq').onclick=function(){
-  reset();
-  burst([8,9,10,11,12,13,14,15],'<b>Sequential scan.</b> One activation, then seven column reads. <span class="tag-hit">7 of 8 hit.</span>');
+  reset();burst([8,9,10,11,12,13,14,15],'<b>Sequential scan.</b> One activation, then seven column reads. <span class="t-hit">7 of 8 hit.</span>');
 };
 document.getElementById('rnd').onclick=function(){
   reset();
@@ -760,55 +806,26 @@ document.getElementById('rnd').onclick=function(){
   burst(l,'<b>Random access.</b> Nearly every read opens a different row, so nearly every read pays the full cycle.');
 };
 document.getElementById('clr').onclick=function(){reset();say.innerHTML='Reset. The next access is a guaranteed miss, whatever it is.';};
-function reset(){
-  openRow=null;hits=0;misses=0;busy=false;
-  th.textContent=0;tm.textContent=0;tc.textContent='0 ns';
-  cells.forEach(function(x){x.classList.remove('open','sel','drain');});
-  amps.forEach(function(a){a.classList.remove('on');});
-  lats.forEach(function(l){l.classList.remove('live','out');l.textContent='·';});
-  setPhase('idle','var(--faint)');
-}
 
-/* scroll drives the chip's phase label */
-var hints={
-  idle:['idle','var(--faint)'],cell:['cell array','var(--faint)'],
-  activate:['activate','var(--hot)'],read:['read','var(--cool)'],
-  precharge:['precharge','var(--hot)'],hit:['addressing','var(--cool)'],banks:['banks','var(--deep)']
-};
-if('IntersectionObserver' in window){
-  var io=new IntersectionObserver(function(es){
-    es.forEach(function(e){
-      if(!e.isIntersecting||busy)return;
-      var h=hints[e.target.dataset.phase];
-      if(h&&openRow===null)setPhase(h[0],h[1]);
-    });
-  },{rootMargin:'-25% 0px -60% 0px'});
-  [].forEach.call(document.querySelectorAll('section[data-phase]'),function(s){io.observe(s);});
-}
-
-/* address decoder */
 var ai=document.getElementById('a'),ao=document.getElementById('ao'),bits=document.getElementById('bits'),adec=document.getElementById('adec');
 var lastPage=null;
+function pad(n,w){var s=n.toString(2);while(s.length<w)s='0'+s;return s;}
 function dec(){
-  var v=+ai.value;
-  var o=v&3,col=(v>>2)&15,bk=(v>>6)&3,row=(v>>8)&15;
+  var v=+ai.value,o=v&3,col=(v>>2)&15,bk=(v>>6)&3,row=(v>>8)&15;
   ao.textContent=v;
   bits.children[0].textContent=pad(row,4);
   bits.children[1].textContent=pad(bk,2);
   bits.children[2].textContent=pad(col,4);
   bits.children[3].textContent=pad(o,2);
   var key=bk+':'+row,same=(lastPage===key);lastPage=key;
-  adec.innerHTML='bank '+bk+' · row '+row+' · column '+col+' · byte '+o+' — '+
-    (same?'<span class="tag-hit">same page as the last address</span>':'<span class="tag-miss">different page, needs activation</span>');
+  adec.innerHTML='bank '+bk+' &middot; row '+row+' &middot; column '+col+' &middot; byte '+o+' \u2014 '+
+    (same?'<span class="t-hit">same page as the last address</span>':'<span class="t-miss">different page, needs activation</span>');
 }
-function pad(n,w){var s=n.toString(2);while(s.length<w)s='0'+s;return s;}
 ai.addEventListener('input',dec);dec();
 
-/* banks */
 var bh=document.getElementById('banks'),bv=[];
 for(var k=0;k<4;k++){
-  var d=document.createElement('div');d.className='bank';
-  d.innerHTML='<div class="bank-n">BANK '+k+'</div><div class="bank-s">closed</div>';
+  var d=mk('div','bank','<div class="bank-n">BANK '+k+'</div><div class="bank-s">closed</div>');
   bh.appendChild(d);bv.push(d);
 }
 var bt=null;
@@ -818,8 +835,8 @@ document.getElementById('bgo').onclick=function(){
     var i=Math.floor(Math.random()*4);
     bv[i].classList.add('busy');
     bv[i].querySelector('.bank-s').textContent='row '+Math.floor(Math.random()*64);
-    setTimeout(function(){bv[i].classList.remove('busy');},650);
-  },700);
+    setTimeout(function(){bv[i].classList.remove('busy');},STEP);
+  },620);
 };
 document.getElementById('bstop').onclick=function(){clearInterval(bt);bt=null;};
 })();
