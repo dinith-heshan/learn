@@ -14,21 +14,26 @@
 <meta property="og:image" content="https://dinith-heshan.github.io/learn/assets/og-default.png">
 <meta name="twitter:card" content="summary_large_image">
 
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%232f6157'/><rect x='7' y='13' width='18' height='2.6' rx='1.3' fill='%23faf8f3'/><rect x='7' y='19' width='11' height='2.6' rx='1.3' fill='%23faf8f3' opacity='.55'/></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%2312585d'/><rect x='7' y='13' width='18' height='2.6' rx='1.3' fill='%23faf8f3'/><rect x='7' y='19' width='11' height='2.6' rx='1.3' fill='%23faf8f3' opacity='.55'/></svg>">
 
 <style>
 :root {
   /* ground — never overridden */
-  --bg:    #faf8f3;
-  --ink:   #23211d;
-  --muted: #6f6a60;
-  --faint: #948f83;
-  --rule:  #e5e0d3;
+  --bg:        #f4efe4;   /* page canvas */
+  --panel:     #faf8f3;   /* raised: figures, recall, footer, sticky pane */
+  --ink:       #1c1915;
+  --muted:     #5d564a;   /* secondary prose */
+  --faint:     #6f6a60;   /* metadata, labels, placeholders */
+  --rule:      #ddd4c2;
+  --rule-soft: #e9e2d4;
 
   /* semantic — meaning assigned per page, values never changed */
-  --c1: #2f6157;   /* green */
-  --c2: #a8721c;   /* amber */
-  --c3: #3f5d7d;   /* slate */
+  --c1:    #ad3311;   /* rust   */
+  --c2:    #12585d;   /* teal   */
+  --c3:    #34306b;   /* indigo */
+  --c1-bg: #f6e4d9;   /* matching tints, for fills behind their own colour */
+  --c2-bg: #dcebea;
+  --c3-bg: #e4e2f0;
 
   --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
   --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -50,7 +55,7 @@ body {
 .measure { max-width: 68ch; }
 
 :focus-visible {
-  outline: 2px solid var(--c1);
+  outline: 2px solid var(--c2);
   outline-offset: 3px;
   border-radius: 2px;
 }
@@ -64,10 +69,13 @@ body {
 
 /* ==========================================================
    Page-specific. One easing curve, one duration, both reused.
+
    Colour on this page:
-     c1 green = latched row, page hit, the cheap path
-     c2 amber = activation and restore, page miss, the penalty
-     c3 slate = banks and parallelism
+     c1 rust   = activation, restore, page miss — the expensive path
+     c2 teal   = latched row, page hit — the cheap path
+     c3 indigo = banks and parallelism
+   Every chromatic state also carries a label or a positional
+   marker, so colour is never the only channel.
    ========================================================== */
 :root { --ease: cubic-bezier(.4,0,.2,1); --dur: 200ms; }
 
@@ -78,7 +86,7 @@ body {
   padding: 18px 0 12px; border-bottom: 1px solid var(--rule);
 }
 .strip a { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--rule); }
-.strip a:hover { border-color: var(--c1); color: var(--c1); }
+.strip a:hover { color: var(--c2); border-color: var(--c2); }
 .strip time { color: var(--faint); }
 
 .title-block { padding: 40px 0 34px; }
@@ -97,8 +105,7 @@ h1 { font-family: var(--mono); font-weight: 600; letter-spacing: -.03em; font-si
 .col-b { grid-column: 1; grid-row: 2; }
 .pane  { grid-column: 2; grid-row: 1 / span 2; position: sticky; top: 24px; }
 .col-a, .col-b { max-width: 68ch; }
-.col-a, .col-b, .pane { min-width: 0; }
-.chip, .arr-wrap { min-width: 0; }
+.col-a, .col-b, .pane, .chip, .arr-wrap { min-width: 0; }
 
 section { margin-bottom: 44px; }
 h2 {
@@ -108,15 +115,15 @@ h2 {
 }
 h2::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
 p { margin: 0 0 15px; }
-code { font-family: var(--mono); font-size: .87em; background: var(--rule); padding: 1px 5px; border-radius: 2px; }
+code { font-family: var(--mono); font-size: .87em; background: var(--rule-soft); padding: 1px 5px; border-radius: 2px; }
 strong { font-weight: 600; }
-a { color: var(--c1); text-underline-offset: 2px; }
+a { color: var(--c2); text-underline-offset: 2px; }
 .k1 { color: var(--c1); font-weight: 600; }
 .k2 { color: var(--c2); font-weight: 600; }
 .k3 { color: var(--c3); font-weight: 600; }
 
-/* ---------- the pane ---------- */
-.chip { border: 1px solid var(--rule); border-radius: 8px; padding: 16px; }
+/* ---------- the pane (raised) ---------- */
+.chip { background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 16px; }
 .chip-h {
   display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
   font-family: var(--mono); font-size: 10px; letter-spacing: .14em;
@@ -137,15 +144,15 @@ a { color: var(--c1); text-underline-offset: 2px; }
               color var(--dur) var(--ease), transform var(--dur) var(--ease);
 }
 .cell:hover { border-color: var(--faint); }
-.cell.open { background: #f6eddc; border-color: var(--c2); color: var(--c2); }
-.cell.sel  { background: var(--c2); border-color: var(--c2); color: var(--bg); transform: scale(1.1); font-weight: 600; }
-.cell.drain { opacity: .3; }
+.cell.open { background: var(--c1-bg); border-color: var(--c1); color: var(--c1); }
+.cell.sel  { background: var(--c1); border-color: var(--c1); color: var(--panel); transform: scale(1.1); font-weight: 600; }
+.cell.drain { opacity: .32; }
 
 .sense { margin-top: 8px; }
-.sense-l, .buf-l { font-family: var(--mono); font-size: 8px; color: var(--faint); text-align: right; padding-right: 5px; line-height: 1.15; align-self: center; }
-.buf-l { color: var(--c1); font-size: 8.5px; }
+.sense-l, .buf-l { font-family: var(--mono); font-size: 9px; color: var(--faint); text-align: right; padding-right: 5px; line-height: 1.15; align-self: center; }
+.buf-l { color: var(--c2); }
 .amp { height: 6px; border-radius: 2px; background: var(--rule); transition: background var(--dur) var(--ease); }
-.amp.on { background: var(--c2); }
+.amp.on { background: var(--c1); }
 
 .buf { margin-top: 5px; }
 .lat {
@@ -154,8 +161,8 @@ a { color: var(--c1); text-underline-offset: 2px; }
   display: flex; align-items: center; justify-content: center;
   transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease);
 }
-.lat.live { background: #dfeae7; border-color: var(--c1); color: var(--c1); font-weight: 600; }
-.lat.out  { background: var(--c1); border-color: var(--c1); color: var(--bg); }
+.lat.live { background: var(--c2-bg); border-color: var(--c2); color: var(--c2); font-weight: 600; }
+.lat.out  { background: var(--c2); border-color: var(--c2); color: var(--panel); }
 
 .legend { display: flex; flex-wrap: wrap; gap: 5px 14px; margin-top: 11px; font-family: var(--mono); font-size: 9.5px; color: var(--faint); letter-spacing: .04em; }
 .legend span { display: flex; align-items: center; gap: 5px; }
@@ -164,15 +171,15 @@ a { color: var(--c1); text-underline-offset: 2px; }
 .sw2 { background: var(--c2); }
 .sw3 { background: var(--c3); }
 
-.say { font-family: var(--mono); font-size: 11px; line-height: 1.55; color: var(--muted); border: 1px solid var(--rule); border-radius: 5px; padding: 10px 12px; margin-top: 12px; min-height: 56px; }
+.say { font-family: var(--mono); font-size: 11px; line-height: 1.55; color: var(--muted); background: var(--bg); border: 1px solid var(--rule-soft); border-radius: 5px; padding: 10px 12px; margin-top: 12px; min-height: 56px; }
 .say b { color: var(--ink); }
-.t-hit  { color: var(--c1); font-weight: 600; }
-.t-miss { color: var(--c2); font-weight: 600; }
+.t-hit  { color: var(--c2); font-weight: 600; }
+.t-miss { color: var(--c1); font-weight: 600; }
 
 .tally { display: flex; gap: 15px; margin-top: 11px; font-family: var(--mono); font-size: 9.5px; color: var(--faint); letter-spacing: .06em; }
 .tally b { display: block; font-size: 16px; color: var(--ink); letter-spacing: -.02em; }
-.tally .h b { color: var(--c1); }
-.tally .m b { color: var(--c2); }
+.tally .h b { color: var(--c2); }
+.tally .m b { color: var(--c1); }
 
 .btns { display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap; }
 .btn {
@@ -181,44 +188,43 @@ a { color: var(--c1); text-underline-offset: 2px; }
   border-radius: 4px; padding: 8px 11px;
   transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
 }
-.btn:hover { background: var(--rule); color: var(--ink); }
-.btn-solid { background: var(--ink); color: var(--bg); border-color: var(--ink); }
-.btn-solid:hover { background: var(--muted); color: var(--bg); }
+.btn:hover { background: var(--rule-soft); color: var(--ink); }
+.btn-solid { background: var(--ink); color: var(--panel); border-color: var(--ink); }
+.btn-solid:hover { background: var(--muted); color: var(--panel); }
 
-/* ---------- figures ---------- */
-figure { margin: 22px 0; border: 1px solid var(--rule); border-radius: 8px; padding: 16px; }
+/* ---------- figures (raised) ---------- */
+figure { margin: 22px 0; background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 16px; }
 figcaption { font-family: var(--mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--faint); margin-bottom: 13px; }
 
 .tl { margin-bottom: 14px; }
 .tl:last-of-type { margin-bottom: 0; }
 .tl-h { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 10.5px; color: var(--muted); margin-bottom: 5px; }
 .tl-h em { font-style: normal; color: var(--faint); }
-.tl-bar { display: flex; height: 29px; border-radius: 4px; overflow: hidden; border: 1px solid var(--rule); }
-.seg { display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 9px; letter-spacing: .04em; color: var(--bg); min-width: 0; overflow: hidden; }
-.seg.a { background: var(--c2); }
-.seg.b { background: #c08a33; }
-.seg.c { background: var(--c1); }
-.seg.pad { background: var(--rule); }
+.tl-bar { display: flex; gap: 2px; height: 29px; border-radius: 4px; overflow: hidden; border: 1px solid var(--rule); background: var(--bg); }
+.seg { display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 9px; letter-spacing: .04em; color: var(--panel); min-width: 0; overflow: hidden; white-space: nowrap; }
+.seg.cost { background: var(--c1); }
+.seg.cheap { background: var(--c2); }
+.seg.idle { color: var(--faint); }
 
 .addr { display: flex; gap: 3px; margin-bottom: 5px; }
 .af { flex-basis: 0; border-radius: 3px; padding: 7px 3px; text-align: center; border: 1px solid; font-family: var(--mono); font-size: 9px; }
 .af b { display: block; font-size: 10px; letter-spacing: .04em; }
-.af.r { flex-grow: 4; background: #f6eddc; border-color: var(--c2); color: var(--c2); }
-.af.b { flex-grow: 2; background: #e2e8ef; border-color: var(--c3); color: var(--c3); }
-.af.c { flex-grow: 4; background: #dfeae7; border-color: var(--c1); color: var(--c1); }
-.af.o { flex-grow: 2; background: var(--rule); border-color: var(--faint); color: var(--muted); }
+.af.r { flex-grow: 4; background: var(--c1-bg); border-color: var(--c1); color: var(--c1); }
+.af.b { flex-grow: 2; background: var(--c3-bg); border-color: var(--c3); color: var(--c3); }
+.af.c { flex-grow: 4; background: var(--c2-bg); border-color: var(--c2); color: var(--c2); }
+.af.o { flex-grow: 2; background: var(--bg); border-color: var(--rule); color: var(--faint); }
 .bits { display: flex; gap: 3px; font-family: var(--mono); font-size: 11px; color: var(--muted); margin-bottom: 13px; }
 .bits > div { flex-basis: 0; text-align: center; }
 .bits .r { flex-grow: 4; } .bits .b { flex-grow: 2; } .bits .c { flex-grow: 4; } .bits .o { flex-grow: 2; }
 .slider { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .slider label { font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--faint); }
-.slider input { flex: 1; min-width: 150px; accent-color: var(--c2); height: 24px; }
-.slider output { font-family: var(--mono); font-size: 12px; font-weight: 600; border: 1px solid var(--rule); border-radius: 3px; padding: 3px 9px; }
+.slider input { flex: 1; min-width: 150px; accent-color: var(--c1); height: 24px; }
+.slider output { font-family: var(--mono); font-size: 12px; font-weight: 600; background: var(--bg); border: 1px solid var(--rule); border-radius: 3px; padding: 3px 9px; }
 #adec { font-family: var(--mono); font-size: 11px; color: var(--muted); margin: 12px 0 0; }
 
 .banks { display: grid; grid-template-columns: repeat(4,1fr); gap: 7px; }
-.bank { border: 1px solid var(--rule); border-radius: 6px; padding: 9px; transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease); }
-.bank.busy { background: #e2e8ef; border-color: var(--c3); }
+.bank { background: var(--bg); border: 1px solid var(--rule); border-radius: 6px; padding: 9px; transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease); }
+.bank.busy { background: var(--c3-bg); border-color: var(--c3); }
 .bank-n { font-family: var(--mono); font-size: 9px; letter-spacing: .1em; color: var(--faint); margin-bottom: 6px; }
 .bank.busy .bank-n { color: var(--c3); }
 .bank-s { font-family: var(--mono); font-size: 10px; color: var(--faint); text-align: center; padding: 5px 3px; border: 1px dashed var(--rule); border-radius: 3px; }
@@ -226,7 +232,7 @@ figcaption { font-family: var(--mono); font-size: 10px; letter-spacing: .14em; t
 
 /* ---------- misconceptions, hedges, sources ---------- */
 .wrong { border-left: 2px solid var(--rule); padding-left: 15px; margin: 0 0 20px; }
-.wrong-c { font-family: var(--mono); font-size: 11px; color: var(--c2); letter-spacing: .03em; margin: 0 0 5px; }
+.wrong-c { font-family: var(--mono); font-size: 11px; color: var(--c1); letter-spacing: .03em; margin: 0 0 5px; }
 .wrong-c::before { content: "\2717  "; }
 .wrong p { margin: 0; font-size: .95rem; color: var(--muted); }
 
@@ -235,31 +241,31 @@ figcaption { font-family: var(--mono); font-size: 10px; letter-spacing: .14em; t
 
 ul { margin: 0 0 15px; padding-left: 19px; }
 li { margin-bottom: 6px; }
-.srcs { list-style: none; padding: 0; font-size: .93rem; }
-.srcs li { margin-bottom: 11px; padding-left: 14px; border-left: 2px solid var(--rule); }
-.srcs span { display: block; font-size: .85rem; color: var(--faint); }
 
-/* ---------- recall ---------- */
-.recall { padding: 8px 0 44px; }
-details { border: 1px solid var(--rule); border-radius: 6px; margin-bottom: 8px; overflow: hidden; }
+/* ---------- recall (raised) ---------- */
+.recall { padding: 8px 0 40px; }
+details { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; margin-bottom: 8px; overflow: hidden; }
 summary {
   cursor: pointer; padding: 14px 15px; font-weight: 500; font-size: .96rem; list-style: none;
   display: flex; gap: 11px; align-items: flex-start; min-height: 44px;
   transition: background var(--dur) var(--ease);
 }
-summary:hover { background: var(--rule); }
+summary:hover { background: var(--bg); }
 summary::-webkit-details-marker { display: none; }
-summary::before { content: "+"; font-family: var(--mono); color: var(--c2); font-weight: 600; flex-shrink: 0; line-height: 1.5; }
+summary::before { content: "+"; font-family: var(--mono); color: var(--c1); font-weight: 600; flex-shrink: 0; line-height: 1.5; }
 details[open] summary::before { content: "\2212"; }
-details[open] summary { background: var(--rule); }
+details[open] summary { background: var(--bg); }
 .ans { padding: 13px 15px 15px 37px; font-size: .93rem; color: var(--muted); border-top: 1px solid var(--rule); }
 .ans p:last-child { margin-bottom: 0; }
 
-/* ---------- footer ---------- */
-footer { border-top: 1px solid var(--rule); }
-.foot { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; font-family: var(--mono); font-size: 12px; padding: 20px 0 34px; }
+/* ---------- footer (raised, stays at measure like the rest of the frame) ---------- */
+.foot {
+  background: var(--panel); border: 1px solid var(--rule); border-radius: 8px;
+  display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  font-family: var(--mono); font-size: 12px; padding: 16px 18px; margin-bottom: 44px;
+}
 .foot a { color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--rule); }
-.foot a:hover { color: var(--c1); border-color: var(--c1); }
+.foot a:hover { color: var(--c2); border-color: var(--c2); }
 
 /* ==========================================================
    900px — one column. The pane un-sticks and drops in directly
@@ -279,7 +285,7 @@ footer { border-top: 1px solid var(--rule); }
   .lat { height: 30px; }
   .arr-wrap::after {
     content: ""; position: absolute; top: 0; right: 0; bottom: 0; width: 24px;
-    background: linear-gradient(90deg, rgba(250,248,243,0), var(--bg));
+    background: linear-gradient(90deg, transparent, var(--panel));
     pointer-events: none;
   }
   .btn { padding: 12px 13px; }
@@ -347,12 +353,12 @@ footer { border-top: 1px solid var(--rule); }
         <h2>So the chip cannot read one bit</h2>
         <p>
           Since sensing wrecks the cell, the chip cannot pick out a single capacitor and leave its
-          neighbours alone. Instead it <span class="k2">activates</span> the entire row at once: one
+          neighbours alone. Instead it <span class="k1">activates</span> the entire row at once: one
           sense amplifier per column detects each faint charge, resolves it to a clean 1 or 0, and
           latches it.
         </p>
         <p>
-          Those latches are the <span class="k1">row buffer</span>. It holds roughly one to two
+          Those latches are the <span class="k2">row buffer</span>. It holds roughly one to two
           kilobytes, one row's worth. Once loaded, it is the only intact copy of that data anywhere on
           the chip.
         </p>
@@ -382,8 +388,8 @@ footer { border-top: 1px solid var(--rule); }
         </div>
 
         <div class="legend">
-          <span><i class="sw sw1"></i>latched &middot; hit</span>
-          <span><i class="sw sw2"></i>activate &middot; restore &middot; miss</span>
+          <span><i class="sw sw1"></i>activate &middot; restore &middot; miss</span>
+          <span><i class="sw sw2"></i>latched &middot; hit</span>
           <span><i class="sw sw3"></i>banks</span>
         </div>
 
@@ -412,7 +418,7 @@ footer { border-top: 1px solid var(--rule); }
           step again.
         </p>
         <p>
-          That is a <span class="k1">page hit</span>, "page" being the industry's name for whichever
+          That is a <span class="k2">page hit</span>, "page" being the industry's name for whichever
           row currently sits in the buffer.
         </p>
       </section>
@@ -422,10 +428,10 @@ footer { border-top: 1px solid var(--rule); }
         <p>
           The original capacitors were drained during activation. Before a different row can open, the
           buffer's contents must be written back into them. That restore is called
-          <span class="k2">precharge</span>, and it is the cost nobody expects.
+          <span class="k1">precharge</span>, and it is the cost nobody expects.
         </p>
         <p>
-          So a <span class="k2">page miss</span> is three operations where a hit was one: precharge the
+          So a <span class="k1">page miss</span> is three operations where a hit was one: precharge the
           open row, activate the new one, then read the column.
         </p>
 
@@ -434,16 +440,16 @@ footer { border-top: 1px solid var(--rule); }
           <div class="tl">
             <div class="tl-h"><span>Page hit</span><em>~13.75 ns</em></div>
             <div class="tl-bar">
-              <div class="seg c" style="flex-grow:1">CL &middot; column read</div>
-              <div class="seg pad" style="flex-grow:2"></div>
+              <div class="seg cheap" style="flex-grow:1">CL &middot; column read</div>
+              <div class="seg idle" style="flex-grow:2"></div>
             </div>
           </div>
           <div class="tl">
             <div class="tl-h"><span>Page miss</span><em>~41.25 ns</em></div>
             <div class="tl-bar">
-              <div class="seg a" style="flex-grow:1">tRP &middot; restore</div>
-              <div class="seg b" style="flex-grow:1">tRCD &middot; activate</div>
-              <div class="seg c" style="flex-grow:1">CL &middot; read</div>
+              <div class="seg cost" style="flex-grow:1">tRP &middot; restore</div>
+              <div class="seg cost" style="flex-grow:1">tRCD &middot; activate</div>
+              <div class="seg cheap" style="flex-grow:1">CL &middot; read</div>
             </div>
           </div>
         </figure>
@@ -580,32 +586,6 @@ footer { border-top: 1px solid var(--rule); }
           not literally what is slow when a job spills.
         </div>
       </section>
-
-      <section>
-        <h2>Where to verify this</h2>
-        <ul class="srcs">
-          <li>
-            JEDEC JESD79-4 (DDR4) and JESD79-5 (DDR5)
-            <span>The authoritative definition of ACTIVATE, READ, PRECHARGE and the timing parameters. Free with registration.</span>
-          </li>
-          <li>
-            Micron DDR4 SDRAM datasheets
-            <span>Per-part timing tables and bank counts. The concrete numbers this page generalises from.</span>
-          </li>
-          <li>
-            Jacob, Ng &amp; Wang, <em>Memory Systems: Cache, DRAM, Disk</em>
-            <span>Textbook treatment of row buffer management and scheduling policies.</span>
-          </li>
-          <li>
-            Drepper, <em>What Every Programmer Should Know About Memory</em> (LWN, 2007)
-            <span>Dated on specifics, still the clearest bridge from this hardware to code that runs on it.</span>
-          </li>
-          <li>
-            Onur Mutlu's computer architecture lectures
-            <span>Publicly posted, and considerably deeper on scheduling and row buffer policy.</span>
-          </li>
-        </ul>
-      </section>
     </div>
   </div>
 
@@ -695,16 +675,12 @@ footer { border-top: 1px solid var(--rule); }
     </details>
   </section>
 
-</div>
+  <footer class="foot measure">
+    <a href="https://github.com/dinith-heshan/learn/issues/new?title=Correction:%20dram-row-buffer&labels=correction">Suggest a correction</a>
+    <a href="../../">back to learn/</a>
+  </footer>
 
-<footer>
-  <div class="page">
-    <div class="foot measure">
-      <a href="https://github.com/dinith-heshan/learn/issues/new?title=Correction:%20dram-row-buffer&labels=correction">Suggest a correction</a>
-      <a href="../../">back to learn/</a>
-    </div>
-  </div>
-</footer>
+</div>
 
 <script>
 (function(){
@@ -736,7 +712,7 @@ for(var j=0;j<COLS;j++){var l=mk('div','lat','&middot;');buf.appendChild(l);lats
 
 function setPhase(t,v){phase.textContent=t;phase.style.color=v||'var(--faint)';}
 
-/* the open row is marked in the label too, so state never rests on colour alone */
+/* the open row is marked in its label too, so state never rests on colour alone */
 function marks(r){
   for(var i=0;i<ROWS;i++)rowLbl[i].textContent=(i===r?'\u25B8r'+i:'r'+i);
 }
@@ -758,11 +734,11 @@ function access(r,c,quiet){
   if(hit){
     amps.forEach(function(a){a.classList.remove('on');});
     lats.forEach(function(l,i){l.classList.toggle('out',i===c);});
-    setPhase('read','var(--c1)');
+    setPhase('read','var(--c2)');
     if(!quiet)say.innerHTML='<b>'+addr+'</b> &middot; row '+r+', col '+c+'<br><span class="t-hit">Page hit.</span> Row already latched. Column read only, about '+HIT+' ns.';
   }else{
     busy=true;
-    setPhase('precharge \u2192 activate','var(--c2)');
+    setPhase('precharge \u2192 activate','var(--c1)');
     amps.forEach(function(a){a.classList.add('on');});
     cells.forEach(function(x,i){if(Math.floor(i/COLS)===r&&i!==addr)x.classList.add('drain');});
     lats.forEach(function(l,i){l.classList.remove('out');l.classList.add('live');l.textContent=r*COLS+i;});
@@ -771,7 +747,7 @@ function access(r,c,quiet){
       amps.forEach(function(a){a.classList.remove('on');});
       cells.forEach(function(x){x.classList.remove('drain');});
       lats.forEach(function(l,i){l.classList.toggle('out',i===c);});
-      setPhase('read','var(--c1)');
+      setPhase('read','var(--c2)');
       busy=false;
     },STEP);
   }
