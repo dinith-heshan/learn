@@ -5,6 +5,12 @@
       "title": "DRAM Row Buffer",
       "summary": "Reading a DRAM cell destroys it, so a whole row is latched into a buffer. Access cost depends on history.",
       "added": "2026-08-15"
+    },
+    {
+      "slug": "compilers-and-interpreters",
+      "title": "Compilers and interpreters",
+      "summary": "The split is when translation happens, not which language you use. Bytecode, VMs and JIT follow from that.",
+      "added": "2026-09-05"
     }
   ]
 }
