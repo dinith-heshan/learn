@@ -1,0 +1,734 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Compilers and interpreters</title>
+<meta name="description" content="The split is when translation happens, not which language you use. Bytecode, VMs and JIT follow from that.">
+<meta property="og:title" content="Compilers and interpreters">
+<meta property="og:description" content="The split is when translation happens, not which language you use. Bytecode, VMs and JIT follow from that.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://dinith-heshan.github.io/learn/concepts/compilers-and-interpreters/">
+<meta property="og:image" content="https://dinith-heshan.github.io/learn/assets/og-default.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%2312585d'/><rect x='7' y='13' width='18' height='2.6' rx='1.3' fill='%23faf8f3'/><rect x='7' y='19' width='11' height='2.6' rx='1.3' fill='%23faf8f3' opacity='.55'/></svg>">
+<style>
+:root {
+  /* ground — never overridden */
+  --bg:        #f4efe4;   /* page canvas */
+  --panel:     #faf8f3;   /* raised: figures, recall, footer, sticky pane */
+  --ink:       #1c1915;
+  --muted:     #5d564a;   /* secondary prose */
+  --faint:     #6f6a60;   /* metadata, labels, placeholders */
+  --rule:      #ddd4c2;
+  --rule-soft: #e9e2d4;
+
+  /* semantic — meaning assigned per page, values never changed */
+  --c1:    #ad3311;   /* rust   */
+  --c2:    #12585d;   /* teal   */
+  --c3:    #34306b;   /* indigo */
+  --c1-bg: #f6e4d9;   /* matching tints, for fills behind their own colour */
+  --c2-bg: #dcebea;
+  --c3-bg: #e4e2f0;
+
+  --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page    { max-width: 1280px; margin: 0 auto; padding: 0 40px; }
+.measure { max-width: 68ch; }
+
+:focus-visible {
+  outline: 2px solid var(--c2);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+@media (max-width: 900px) { /* grid collapses to one column */ }
+@media (max-width: 560px) { .page { padding: 0 18px; } }
+
+/* ── page-specific ────────────────────────────────────────────────── */
+
+:root { --ease: cubic-bezier(.2,.7,.3,1); --dur: 180ms; }
+
+/* return strip */
+.strip { border-bottom: 1px solid var(--rule); background: var(--bg); }
+.strip .page {
+  display: flex; align-items: center; justify-content: space-between;
+  height: 52px; font-size: 13px;
+}
+.strip a { color: var(--c2); text-decoration: none; font-family: var(--mono); font-weight: 600; letter-spacing: .01em; }
+.strip a:hover { text-decoration: underline; }
+.strip time { color: var(--faint); font-family: var(--mono); font-size: 12px; }
+
+/* title block */
+.title { padding: 52px 0 30px; }
+h1 { font-size: 44px; line-height: 1.08; margin: 0 0 14px; letter-spacing: -.021em; font-weight: 640; }
+.lede { font-size: 18.5px; line-height: 1.5; color: var(--muted); margin: 0; }
+
+/* two-column body — prose splits either side of the pane's mobile position */
+.body {
+  display: grid; grid-template-columns: minmax(0,68ch) minmax(0,1fr);
+  column-gap: 56px; align-items: start; padding-bottom: 8px;
+}
+.body > .part-a { grid-column: 1; grid-row: 1; }
+.body > .part-b { grid-column: 1; grid-row: 2; }
+.body > .pane   { grid-column: 2; grid-row: 1 / span 2; }
+
+article h2 {
+  font-size: 12px; text-transform: uppercase; letter-spacing: .1em; font-weight: 700;
+  color: var(--c1); margin: 46px 0 6px; font-family: var(--mono);
+}
+article h2:first-child { margin-top: 0; }
+article h3 { font-size: 17px; margin: 30px 0 4px; font-weight: 640; letter-spacing: -.006em; }
+article p { margin: 0 0 15px; }
+article p.sub { color: var(--muted); }
+article strong { font-weight: 640; }
+code, .m { font-family: var(--mono); font-size: .885em; }
+article :not(pre) > code { background: var(--rule-soft); padding: .1em .35em; border-radius: 3px; }
+pre {
+  font-family: var(--mono); font-size: 12.6px; line-height: 1.62; background: var(--panel);
+  border: 1px solid var(--rule); border-radius: 6px; padding: 13px 15px; margin: 0 0 16px;
+  overflow-x: auto;
+}
+article ul { margin: 0 0 15px; padding-left: 20px; }
+article li { margin-bottom: 6px; }
+
+/* callouts */
+.note {
+  border-left: 3px solid var(--c3); background: var(--c3-bg); color: var(--c3);
+  padding: 11px 15px; margin: 0 0 16px; border-radius: 0 5px 5px 0; font-size: 14.5px; line-height: 1.5;
+}
+.note b { font-weight: 700; }
+.wrong {
+  border-left: 3px solid var(--c1); background: var(--c1-bg); color: var(--c1);
+  padding: 11px 15px; margin: 0 0 16px; border-radius: 0 5px 5px 0; font-size: 14.5px; line-height: 1.5;
+}
+.wrong b { font-weight: 700; }
+
+/* measured bars */
+.bars { background: var(--panel); border: 1px solid var(--rule); border-radius: 7px; padding: 16px 17px 13px; margin: 0 0 16px; }
+.bars .cap { font-size: 12px; color: var(--faint); font-family: var(--mono); margin-bottom: 12px; }
+.bar { display: grid; grid-template-columns: 15ch 1fr 8ch; gap: 10px; align-items: center; margin-bottom: 8px; font-size: 13px; }
+.bar .lb { color: var(--muted); }
+.bar .tr { display: block; background: var(--rule-soft); border-radius: 3px; height: 15px; overflow: hidden; }
+.bar .fl { display: block; height: 100%; border-radius: 3px; min-width: 3px; }
+.bar .vl { font-family: var(--mono); font-size: 12px; text-align: right; color: var(--ink); }
+.bars .foot { font-size: 12.5px; color: var(--faint); margin-top: 10px; line-height: 1.45; }
+
+/* inline stepper */
+.stepper { background: var(--panel); border: 1px solid var(--rule); border-radius: 7px; padding: 16px 17px; margin: 0 0 16px; }
+.stepper .hd { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.stepper .hd h4 { margin: 0; font-size: 13px; font-family: var(--mono); text-transform: uppercase; letter-spacing: .07em; color: var(--faint); font-weight: 700; }
+.stepper .count { font-family: var(--mono); font-size: 12px; color: var(--c2); }
+.steps { list-style: none; margin: 0 0 13px; padding: 0; counter-reset: s; }
+.steps li {
+  counter-increment: s; font-size: 13.5px; padding: 3px 9px 3px 30px; position: relative;
+  color: var(--faint); border-radius: 4px; transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+  margin-bottom: 1px;
+}
+.steps li::before {
+  content: counter(s); position: absolute; left: 8px; font-family: var(--mono); font-size: 11px; top: 5px;
+}
+.steps li.on { color: var(--ink); background: var(--c2-bg); }
+.steps li.done { color: var(--muted); }
+.steps li.work { font-weight: 640; }
+.steps li.work.on { background: var(--c1-bg); color: var(--c1); }
+.stepper .ctl { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+button {
+  font: inherit; font-size: 13px; background: var(--bg); color: var(--ink); border: 1px solid var(--rule);
+  border-radius: 5px; padding: 0 14px; min-height: 44px; cursor: pointer;
+  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+button:hover:not(:disabled) { background: var(--c2-bg); border-color: var(--c2); }
+button:disabled { opacity: .42; cursor: default; }
+.stepper .cmp { font-size: 13px; color: var(--muted); margin-left: auto; }
+.stepper .cmp .m { color: var(--c1); }
+
+/* ── sticky interactive pane ─────────────────────────────────────── */
+.pane {
+  position: sticky; top: 24px; background: var(--panel); border: 1px solid var(--rule);
+  border-radius: 9px; padding: 18px 18px 16px;
+  max-height: calc(100vh - 48px); overflow-y: auto;
+}
+.pane > h2 {
+  font-size: 12px; font-family: var(--mono); text-transform: uppercase; letter-spacing: .1em;
+  color: var(--ink); margin: 0 0 3px; font-weight: 700;
+}
+.pane .hint { font-size: 12.5px; color: var(--faint); margin: 0 0 14px; line-height: 1.45; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 15px; }
+.chip {
+  font-size: 11px; font-family: var(--mono); padding: 4px 8px; border-radius: 4px;
+  display: inline-flex; align-items: center; gap: 6px; letter-spacing: .01em;
+}
+.chip i { width: 16px; height: 0; display: inline-block; border-top-width: 2px; }
+.chip.aot { background: var(--c1-bg); color: var(--c1); }
+.chip.aot i { border-top: 2px solid var(--c1); }
+.chip.jit { background: var(--c2-bg); color: var(--c2); }
+.chip.jit i { border-top: 2px dashed var(--c2); }
+.chip.run { background: var(--c3-bg); color: var(--c3); }
+.chip.run i { border-top: 2px dotted var(--c3); }
+
+.picker { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 16px; }
+.picker button { padding: 0 10px; text-align: left; font-size: 12.5px; line-height: 1.25; }
+.picker button[aria-pressed="true"] { background: var(--c2); border-color: var(--c2); color: var(--panel); }
+.picker button[aria-pressed="true"]:hover { background: var(--c2); }
+
+.chain { margin: 0 0 14px; }
+.nd {
+  border: 1px solid var(--rule); background: var(--bg); border-radius: 5px;
+  padding: 8px 11px; font-size: 13px; font-family: var(--mono); letter-spacing: -.005em;
+}
+.nd.term { color: var(--muted); }
+.eg { display: flex; align-items: center; gap: 9px; padding: 7px 0 7px 15px; position: relative; }
+.eg::before { content: ""; position: absolute; left: 15px; top: 0; bottom: 0; width: 0; }
+.eg.aot::before { border-left: 2px solid var(--c1); }
+.eg.jit::before { border-left: 2px dashed var(--c2); }
+.eg.run::before { border-left: 2px dotted var(--c3); }
+.eg .tag {
+  font-size: 10px; font-family: var(--mono); text-transform: uppercase; letter-spacing: .06em;
+  padding: 2px 6px; border-radius: 3px; margin-left: 13px; flex: none; font-weight: 700;
+}
+.eg.aot .tag { background: var(--c1-bg); color: var(--c1); }
+.eg.jit .tag { background: var(--c2-bg); color: var(--c2); }
+.eg.run .tag { background: var(--c3-bg); color: var(--c3); }
+.eg .lbl { font-size: 12.5px; color: var(--muted); line-height: 1.35; }
+
+.divider { display: flex; align-items: center; gap: 9px; margin: 9px 0; }
+.divider span {
+  font-size: 10.5px; font-family: var(--mono); text-transform: uppercase; letter-spacing: .07em;
+  color: var(--faint); flex: none;
+}
+.divider::before, .divider::after { content: ""; height: 1px; background: var(--rule); flex: 1; }
+
+.facts { border-top: 1px solid var(--rule-soft); padding-top: 13px; margin: 0; }
+.facts div { margin-bottom: 10px; }
+.facts div:last-child { margin-bottom: 0; }
+.facts dt {
+  font-size: 10.5px; font-family: var(--mono); text-transform: uppercase; letter-spacing: .07em;
+  color: var(--faint); margin-bottom: 2px; font-weight: 700;
+}
+.facts dd { margin: 0; font-size: 13px; line-height: 1.45; color: var(--muted); }
+
+/* ── recall ──────────────────────────────────────────────────────── */
+.recall { padding: 46px 0 0; }
+.recall h2 { font-size: 12px; font-family: var(--mono); text-transform: uppercase; letter-spacing: .1em; color: var(--c1); margin: 0 0 4px; font-weight: 700; }
+.recall .hint { font-size: 13.5px; color: var(--faint); margin: 0 0 16px; }
+details {
+  background: var(--panel); border: 1px solid var(--rule); border-radius: 7px;
+  margin-bottom: 8px; overflow: hidden;
+}
+summary {
+  cursor: pointer; padding: 14px 16px; font-size: 15px; font-weight: 550; list-style: none;
+  min-height: 44px; display: flex; align-items: center; gap: 11px;
+  transition: background var(--dur) var(--ease);
+}
+summary::-webkit-details-marker { display: none; }
+summary::before {
+  content: "+"; font-family: var(--mono); color: var(--c2); font-size: 16px; flex: none;
+  transition: transform var(--dur) var(--ease);
+}
+details[open] summary::before { content: "−"; }
+summary:hover { background: var(--c2-bg); }
+details .ans { padding: 0 16px 15px 43px; font-size: 14.5px; color: var(--muted); line-height: 1.55; }
+details .ans p { margin: 0 0 10px; }
+details .ans p:last-child { margin: 0; }
+details .ans code { background: var(--rule-soft); padding: .1em .35em; border-radius: 3px; }
+
+/* ── footer ──────────────────────────────────────────────────────── */
+footer { margin: 52px 0 0; border-top: 1px solid var(--rule); }
+footer .in {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 20px 0 46px; font-size: 13.5px;
+}
+footer a { color: var(--c2); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+
+/* ── responsive ──────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .body { display: flex; flex-direction: column; align-items: stretch; }
+  .body > * { min-width: 0; max-width: 100%; }
+  .body > .part-a { order: 0; }
+  .body > .pane   { order: 1; margin: 12px 0 38px; }
+  .body > .part-b { order: 2; }
+  .pane { position: static; max-height: none; }
+  .part-b h2:first-child { margin-top: 0; }
+  .title { padding: 34px 0 22px; }
+  h1 { font-size: 34px; }
+  .lede { font-size: 17px; }
+}
+@media (max-width: 560px) {
+  h1 { font-size: 28px; }
+  .lede { font-size: 16px; }
+  .picker { grid-template-columns: 1fr; }
+  .bar { grid-template-columns: 1fr; gap: 3px; }
+  .bar .vl { text-align: left; }
+  .stepper .cmp { margin-left: 0; width: 100%; }
+  pre { font-size: 11.6px; }
+}
+</style>
+</head>
+<body>
+
+<div class="strip">
+  <div class="page"><a href="../../">learn/</a><time datetime="2026-09-05">2026-09-05</time></div>
+</div>
+
+<div class="page">
+
+  <header class="title measure">
+    <h1>Compilers and interpreters</h1>
+    <p class="lede">A compiler turns a program into another program; an interpreter takes a program <em>and its data</em> and produces the program's output. Everything else is a question of where you stop and when.</p>
+  </header>
+
+  <div class="body">
+
+    <article class="measure part-a">
+
+      <h2>The gap</h2>
+      <p>A CPU does one thing in a loop: fetch a number from memory, decode it as an instruction, do it, move on. Those numbers are the only language it speaks. A file containing <code>return a + b</code> is, to a CPU, just ASCII bytes — no more executable than a photograph.</p>
+      <p>So something has to bridge that. There are two strategies, and every system is one of them or a stack of both.</p>
+      <ul>
+        <li><strong>Translate ahead of time.</strong> Read the source, work out which machine instructions have that effect, write them to a new file. You now have a second artifact you can run forever without looking at the source again.</li>
+        <li><strong>Don't translate — just do what it says.</strong> Write a program that reads the source, works out what the first step means, performs it, and moves on. The source is never converted. It is consulted, repeatedly, while the work happens.</li>
+      </ul>
+      <p>Stated exactly, which settles most arguments about this topic:</p>
+      <pre>compiler(source)          → another program
+interpreter(source, data) → the program's output</pre>
+      <p>Look at what is on each side. A compiler never sees your program's data. It finishes and exits before your program starts. An interpreter needs the data, because it is the thing doing the running.</p>
+
+      <h2>The category error</h2>
+      <p>"Python is an interpreted language, C is a compiled language" is wrong as stated, and believing it blocks everything that follows.</p>
+      <div class="wrong"><b>Compiled and interpreted are properties of an implementation, not of a language.</b> A language definition says what programs <em>mean</em>. It says nothing about how you get a machine to produce that meaning. Cling is an interpreter for C++. GraalVM compiles Java ahead of time to a native binary. V8 compiles JavaScript — the canonical "scripting language" — to optimised machine code in every browser you have ever used.</div>
+      <p>The answerable question is never "is X compiled?" but <strong>"what does this implementation do, and when does it do it?"</strong> The panel on this page answers exactly that for eight of them.</p>
+
+      <h2>The numbered list</h2>
+      <p>Imagine driving the same route a thousand times with directions written as prose: <em>"out of the car park, and at the roundabout — the second one, not the little one — take the exit toward the retail park."</em> Every trip you must untangle what that means. Now rewrite it once as a numbered list of single unambiguous actions. Same route, none of the untangling.</p>
+      <div class="note"><b>Model vs mechanism.</b> The route analogy is a mental model. What follows is not — Python literally does this, and the list is a file you can find on disk.</div>
+      <p>Python untangles <code>s = s + x</code> exactly once, when it loads your file, into four dumb steps:</p>
+      <pre>LOAD_FAST    1 (s)      get the value of s
+LOAD_FAST    2 (x)      get the value of x
+BINARY_OP    0 (+)      add the last two things
+STORE_FAST   1 (s)      put the answer back in s</pre>
+      <p>In a loop, the body appears <strong>once</strong>, with a <code>JUMP_BACKWARD</code> at the end. A million iterations untangle the source once and run the list a million times. The text is never consulted again — it is not even kept.</p>
+      <p>That list is <strong>bytecode</strong>. Each step is stored as a small number rather than a word, and small numbers fit in a byte. <code>LOAD_FAST</code> is stored as 124; the name only exists because you asked for a readable printout.</p>
+      <p>You can prove the source is genuinely unnecessary. Compile a file with <code>python -m py_compile</code>, delete the <code>.py</code> entirely, then run what is left:</p>
+      <pre>$ python3 __pycache__/greet.cpython-311.pyc
+DINITH!</pre>
+      <p>Which forces a correction to the tidy two-way split above. Turning source text into that list is <em>turning a program into a different program</em> — no data in sight. <strong>That step is compilation.</strong> Python has a compiler in it, and <code>__pycache__</code> is where it saves the results. What differs from C is not <em>whether</em> Python compiles but <em>how far</em>: C goes all the way to instructions the CPU executes; Python stops at a list something else must read.</p>
+
+      <h2>You accidentally built a computer</h2>
+      <p>Someone decided which steps that list is allowed to contain — <code>LOAD_FAST</code>, <code>BINARY_OP</code>, <code>JUMP_BACKWARD</code>, a couple of hundred in all. A fixed menu of operations a machine can perform is an <strong>instruction set</strong>, and every computer has one. Intel decided x86's decades ago.</p>
+      <p>So Python has an instruction set, somewhere to keep values, and a pointer tracking which step it is on. It has a computer. The only difference from Intel's is what it is made of: Intel's is etched into silicon, Python's is a program reading numbers off a list. That is what <strong>virtual machine</strong> means here.</p>
+      <div class="note"><b>Not that kind of VM.</b> VirtualBox and VMware imitate a <em>real</em> machine, convincingly enough that a real OS installs on it. A language VM imitates a machine nobody built and nobody will — invented on purpose to be a convenient target.</div>
+      <p>Java's is the famous one. <code>static int add(int a, int b)</code> compiles to four one-byte instructions in a <code>.class</code> file:</p>
+      <pre>iload_0   get local 0        (0x1a)
+iload_1   get local 1        (0x1b)
+iadd      add the last two   (0x60)
+ireturn   return the answer  (0xac)</pre>
+      <p>Different names, different decade, identical idea. The number identifying the operation — 124, 0x60, or x86's <code>0x8d</code> for <code>lea</code> — is an <strong>opcode</strong>; the bytes describing what it acts on are <strong>operands</strong>. There is no conceptual difference between a bytecode opcode and a machine-code one. The difference is entirely <em>who decodes it</em>: a software loop looking up a table, or a circuit routing signals.</p>
+      <p>Three things follow, and they are why the design is everywhere. Your compiler only has to know one machine, so porting to new hardware means porting the VM once. You can invent instructions no chip would provide — Intel will never ship "call this method, working out at runtime which class's version to use", but the JVM has <code>invokevirtual</code>. And other languages can move in: Kotlin, Scala and Clojure exist because the JVM did, which is also why Spark is written in Scala.</p>
+
+      <h2>Why dynamic languages are slow</h2>
+      <p>The usual explanation is "there's an interpreter loop in the way." It is the smaller half. Here is an experiment that splits the cost apart — summing five million integers three ways.</p>
+      <div class="bars">
+        <div class="cap">sum of 5,000,000 integers</div>
+        <div class="bar"><span class="lb">Python loop</span><span class="tr"><span class="fl" style="width:100%;background:var(--c1)"></span></span><span class="vl">98.3 ms</span></div>
+        <div class="bar"><span class="lb">built-in <span class="m">sum()</span></span><span class="tr"><span class="fl" style="width:28.8%;background:var(--c2)"></span></span><span class="vl">28.3 ms</span></div>
+        <div class="bar"><span class="lb">numpy <span class="m">.sum()</span></span><span class="tr"><span class="fl" style="width:3.1%;background:var(--c3)"></span></span><span class="vl">3.0 ms</span></div>
+        <div class="foot">Measured once in a single Linux container. Treat the ratios as indicative, not as a benchmark.</div>
+      </div>
+      <p>The middle bar is the interesting one. <code>sum()</code> is a C function inside CPython — while it runs there is no bytecode, no dispatch, no interpreter at all. So the gap from the first bar to the second is exactly what the interpreter costs: <strong>3.5x</strong>.</p>
+      <p>If the loop were the main problem, the second and third bars would be close. Both are C; neither interprets anything. numpy is another <strong>9.5x</strong> faster. Most of Python's slowness lives somewhere the interpreter is not.</p>
+      <p>It lives in what <code>a</code> actually is. Not a number — a pointer to an object on the heap. Step through what <code>a + b</code> has to accomplish:</p>
+
+      <div class="stepper" id="stp">
+        <div class="hd">
+          <h4>What <span class="m">a + b</span> costs</h4>
+          <span class="count" id="stp-count">step 1 of 11</span>
+        </div>
+        <ol class="steps" id="stp-list"></ol>
+        <div class="ctl">
+          <button id="stp-prev" type="button">Back</button>
+          <button id="stp-next" type="button">Step</button>
+          <button id="stp-reset" type="button">Reset</button>
+          <span class="cmp">In C, all of it is <span class="m">lea (%rdi,%rsi,1),%eax</span> — one instruction.</span>
+        </div>
+      </div>
+
+      <p>One step is the work. The rest is ceremony, and it happens on every single execution. The same point as a measurement: <code>sys.getsizeof(1)</code> is <strong>28 bytes</strong>, because the number 1 is an object with a type pointer, a reference count and a length field. An <code>int64</code> in numpy is 8. Five million of them: about 180 MB of pointers and scattered objects, against numpy's 40 MB of contiguous values.</p>
+      <div class="wrong"><b>Why Python has to do this.</b> In <code>def add(a, b): return a + b</code>, what are <code>a</code> and <code>b</code>? You cannot answer and neither can the compiler — integers, strings, arrays, a class with <code>__add__</code>, all legal. C knows because you wrote <code>int</code>. That single fact is what buys the one-instruction version. A language that refuses to commit to types until runtime must box every value with its type and consult the box on every operation.</div>
+      <p>This is why numpy, pandas, Arrow and Parquet exist. A pandas column is not a list of Python objects; it is one contiguous block of raw values with the type recorded <em>once</em> for the whole column. "Vectorise it, don't loop" means: hand the whole column to code that already knows the type, so the per-value ceremony happens zero times instead of five million.</p>
+      <p>CPython has since learned to watch. Run two identical functions a thousand times each, one on integers and one on strings, then look at their bytecode:</p>
+      <pre>before any runs:      BINARY_OP
+1000 runs on ints:    BINARY_OP_ADD_INT
+1000 runs on strings: BINARY_OP_ADD_UNICODE</pre>
+      <p>Same source. The bytecode <strong>rewrote itself</strong>, differently, based on what actually flowed through it, with a cheap guard that reverts if the assumption breaks. This is <em>information a compiler could never have had</em> — no static analysis proves <code>add</code> only ever gets integers, but running it a thousand times does.</p>
+
+      <h2>Watch, guess, guard, undo</h2>
+      <p>Specialising is a half-step. The full step: once you know the types, generate real machine code — what an ahead-of-time compiler would have emitted if only you had declared them. But you observed the types rather than proving them, and observations can turn out wrong.</p>
+      <p>So a <strong>JIT</strong> first waits. Most functions run a handful of times and compiling them is pure waste, so it counts, and invests only in the ones that earn it. Here is V8 making that call:</p>
+      <pre>[marking &lt;JSFunction add&gt; for optimization to TURBOFAN,
+ reason: <b>hot and stable</b>]
+[completed compiling &lt;JSFunction add&gt; - took 0.75, 22.05, 0.09 ms]</pre>
+      <p>Called a lot, <em>and</em> the types have stopped changing — both conditions. Twenty-two milliseconds spent compiling one two-line function. The return, timing the identical 300,000 calls over and over:</p>
+      <div class="bars">
+        <div class="cap">300,000 calls to the same function, round by round</div>
+        <div class="bar"><span class="lb">round 1</span><span class="tr"><span class="fl" style="width:100%;background:var(--c1)"></span></span><span class="vl">7.69 ms</span></div>
+        <div class="bar"><span class="lb">round 2</span><span class="tr"><span class="fl" style="width:6.9%;background:var(--c2)"></span></span><span class="vl">0.53 ms</span></div>
+        <div class="bar"><span class="lb">round 4</span><span class="tr"><span class="fl" style="width:4.7%;background:var(--c2)"></span></span><span class="vl">0.36 ms</span></div>
+        <div class="foot">Same code, same inputs, nothing changed in the source. Round one ran interpreted.</div>
+      </div>
+      <p>The compiled version has integer addition baked in, so it opens with a <strong>guard</strong> — two or three instructions checking the assumption still holds. When one fails:</p>
+      <pre>[bailout (kind: deopt-eager, reason: <b>not a Smi</b>):
+ deoptimizing &lt;JSFunction add&gt;, &lt;Code TURBOFAN&gt;, bytecode offset 2]</pre>
+      <p><em>Smi</em> is V8's small integer stored directly rather than as a heap object; the guard tripped on a string. <strong>Deoptimisation</strong> is the hard engineering in any JIT: you are mid-execution inside optimised machine code, values in registers in a layout the interpreter knows nothing about, and you must rebuild the interpreter's state exactly as it would have been and resume at the right step, as though the optimised version never existed.</p>
+      <p>That escape hatch is the entire point, because it lets a JIT bet on facts that are <em>true in practice but not provable</em>: this list only ever held integers; this method is never overridden, so inline it; this branch is never taken. An ahead-of-time compiler must emit code correct for <strong>every legal execution</strong>. A JIT only needs code correct for <strong>the execution actually happening</strong>. That is a far weaker requirement, and it is why JIT-compiled JavaScript sometimes beats compiled code written in a much better language.</p>
+      <p>The bill is that 7.69 ms first round — <strong>warm-up</strong>. It is why a fresh JVM service is sluggish for a minute, why serverless cold starts hurt, and why a short script sees no benefit at all: it exits before anything gets hot.</p>
+
+    </article>
+
+    <article class="measure part-b">
+
+      <h2>Where everything sits</h2>
+      <p>Two questions place any system: <strong>when</strong> does translation happen relative to running, and <strong>how far down</strong> does it go. Nothing occupies a single point — every real system is a <em>path</em>, which is what the panel draws. TypeScript is the one worth staring at: three translations at two different times, the middle one a language you could have written by hand.</p>
+      <p>Notice what <code>tsc</code> actually does — it <em>deletes</em> the types. They checked your work at build time and then evaporated; nothing downstream ever learns that <code>name</code> is a string. Which is why TypeScript buys you zero runtime speed, while <code>int</code> in C is precisely what buys the one-instruction add. Same-looking annotation, opposite consequence, because of which stage consumes it.</p>
+      <p>The categories leak in both directions, which is the real lesson:</p>
+      <ul>
+        <li><strong>Profile-guided optimisation</strong> is ahead-of-time stealing the JIT's trick. Compile with instrumentation, run on sample input, record which branches went where, recompile using that. On a C program whose function pointer is the same function 99.9999% of the time: <span class="m">0.42 s → 0.22 s</span>. Its weakness is obvious — the profile came from your sample run, not production.</li>
+        <li><strong>GraalVM Native Image</strong> goes the other way, compiling Java to a standalone binary. Startup drops to milliseconds; peak throughput on a long-running server is typically <em>worse</em> than a warmed JVM, because everything the JIT was doing is gone.</li>
+        <li><strong>Android's ART</strong> refuses to choose: interpret, JIT the hot methods, then ahead-of-time compile them from the collected profile while the phone charges.</li>
+      </ul>
+      <p>There are also two kinds of JIT. A <strong>method JIT</strong> compiles a whole function (HotSpot, V8, .NET). A <strong>tracing JIT</strong> compiles a hot <em>path</em>: record the exact sequence one loop iteration performs, straight through calls and branches, and compile that straight line, with every road not taken becoming a guard. Inlining comes free and the result is perfectly linear code. It is superb on tight numeric loops and shaky on branchy logic — PyPy and LuaJIT use it; Firefox tried it and went back to a method JIT.</p>
+      <div class="note"><b>Honest numbers on CPython's own JIT.</b> It has been in CPython since 3.13 and, as of 3.15, is built into official binaries but still <em>off by default</em> — you opt in with <code>PYTHON_JIT=1</code>. Measured gain is roughly <b>4–12%</b> depending on platform, per PEP 836, against V8's 19x. The reason is the section above: a JIT bolted onto an existing interpreter can remove the dispatch, but it cannot make a Python integer stop being a 28-byte heap object. That is baked into the object model and every extension ever written. Which is also why "just compile my Python ahead of time" does not get you C speed — the compiler still does not know the types.</div>
+
+      <h2>Your query engine is this same story</h2>
+      <p>SQL is a language and your database implements it. The parse produces a tree, the optimiser rewrites it, and the physical plan is a tree of operators — Scan, Filter, HashJoin, Aggregate — which is a program in an instruction set of relational operations. So <code>plan(SQL) → physical plan</code> is a compiler and <code>execute(plan, data) → rows</code> is an interpreter, by the definition at the top. <code>EXPLAIN</code> is a disassembler.</p>
+      <p>With one thing no language compiler has: <strong>statistics about the data</strong>. gcc has no idea whether your loop runs three times or three billion. A database estimates how many rows reach each operator before running anything. That is why join order matters, and why stale statistics produce catastrophic plans — a compiler with a crystal ball, only as good as your last <code>ANALYZE</code>.</p>
+      <p>Execution then went through the exact evolution above:</p>
+      <ul>
+        <li><strong>The iterator model</strong> — every operator exposes <code>next()</code>, returning one row, pulled up through the tree. This is a tree-walking interpreter, with the same costs: one indirect call per operator per row, boxed tuples throughout.</li>
+        <li><strong>Vectorised execution</strong> — pass a batch instead (DuckDB uses 2048 rows). Dispatch amortises to nothing and the inner loop runs over one column's contiguous memory. This is the numpy answer, applied to a database. DuckDB, ClickHouse, Velox and Photon all work this way.</li>
+        <li><strong>Query compilation</strong> — generate code for <em>this specific query</em> and compile it, collapsing the whole tree into one fused loop. Spark's whole-stage codegen emits Java source at runtime, compiles it with Janino, and the JVM then JITs <em>that</em> — three stacked translations, two while your job runs. The <code>*(1)</code> markers in <code>explain()</code> output mark the fused stages.</li>
+      </ul>
+      <div class="bars">
+        <div class="cap">SELECT sum(v) FROM t WHERE c = 1 — over 20,000,000 rows</div>
+        <div class="bar"><span class="lb">Python row loop</span><span class="tr"><span class="fl" style="width:100%;background:var(--c1)"></span></span><span class="vl">559.4 ms</span></div>
+        <div class="bar"><span class="lb">pandas</span><span class="tr"><span class="fl" style="width:22.3%;background:var(--c2)"></span></span><span class="vl">124.8 ms</span></div>
+        <div class="bar"><span class="lb">DuckDB</span><span class="tr"><span class="fl" style="width:5.3%;background:var(--c3)"></span></span><span class="vl">29.9 ms</span></div>
+        <div class="foot">Same rows, same answer. The last gap is mostly DuckDB fusing filter and sum into one pass where pandas materialises an intermediate.</div>
+      </div>
+      <p>And the trade-off is identical, tiers included. Postgres decides per query, using estimated cost rather than observed call counts:</p>
+      <pre>jit                       on
+jit_above_cost            100000   → compile at all
+jit_inline_above_cost     500000   → also inline
+jit_optimize_above_cost   500000   → also optimise hard</pre>
+      <p>That is the JVM's interpreter → C1 → C2 ladder, rebuilt in a database. Its failure mode is the mirror image too: a bad estimate compiles a query that turns out tiny, and you pay for nothing.</p>
+      <p>Three things this should change in practice. <strong>"Vectorise it" is not a pandas idiom</strong> — it is the same instruction as "get out of the interpreter loop" and "unbox the values", wearing a third hat. <strong>A Python UDF in Spark is a hole in the fused loop</strong>: Spark cannot generate Java for code it cannot see, so the pipeline stops, serialises rows, ships them to a Python process and boxes them — every optimisation above switched off for the duration, which is why Arrow-based pandas UDFs help and a clumsy native expression still beats an elegant UDF. And <strong>stale statistics are a database's version of a JIT that will not stop deoptimising</strong>: in both cases the system bet on how the data would behave and lost.</p>
+
+    </article>
+
+    <aside class="pane" aria-label="Where the translation happens">
+      <h2>Where the translation happens</h2>
+      <p class="hint">Pick an implementation. The dividing line moves — that movement is the whole point.</p>
+
+      <div class="legend">
+        <span class="chip aot"><i></i>before it runs</span>
+        <span class="chip jit"><i></i>while it runs</span>
+        <span class="chip run"><i></i>no translation</span>
+      </div>
+
+      <div class="picker" id="pick" role="group" aria-label="Implementation"></div>
+
+      <div class="chain" id="chain" aria-live="polite"></div>
+
+      <dl class="facts" id="facts"></dl>
+    </aside>
+
+  </div>
+
+  <section class="recall measure">
+    <h2>Recall</h2>
+    <p class="hint">Answer before opening. These test whether the idea can be rebuilt, not whether a term can be looked up.</p>
+
+    <details>
+      <summary>Python compiles your code. What does it compile it to, and why doesn't that make it fast?</summary>
+      <div class="ans">
+        <p>To bytecode — a flat numbered list of simple steps, saved in <code>__pycache__</code> as a <code>.pyc</code> you can run after deleting the source. That is compilation by the definition at the top: program in, different program out, no data involved.</p>
+        <p>It doesn't make it fast because the translation stops short of machine code, and more importantly because it changes nothing about how values are stored. <code>BINARY_OP +</code> still has to follow two pointers, read two type fields, look up the right addition, unpack the values, allocate a new 28-byte object for the result and adjust reference counts. Removing the interpreter loop entirely buys about 3.5x. Removing the boxing buys another 9.5x.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>A new language is described as "AOT compiled". What does that tell you about startup and peak speed, and what can it never do that a JIT can?</summary>
+      <div class="ans">
+        <p>Startup is instant and speed is flat — no warm-up, because all the work finished before the process began. That makes it right for short-lived things: CLI tools, serverless functions, anything that exits before a JIT would pay for itself.</p>
+        <p>What it can never do is bet on facts that are true but unprovable. An AOT compiler must emit code correct for <em>every legal execution</em>, so it keeps the indirect call in case a subclass overrides the method, and keeps the type checks in case a string shows up. A JIT only needs code correct for <em>the execution actually happening</em>, plus a guard and a way back — so it can inline the method it can see and assume the integers it has been getting.</p>
+        <p>Profile-guided optimisation is the partial exception: an AOT compiler making the same bet from a recorded earlier run, roughly 2x on branch-heavy code, limited by whether that recording resembles production.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>V8 compiled a function assuming both arguments are integers. Tomorrow someone passes a string. Walk through what has to happen.</summary>
+      <div class="ans">
+        <p>The compiled code opens with a guard — a two-or-three-instruction check that both arguments are still small integers. The string fails it, and the runtime bails out.</p>
+        <p>Deoptimisation is then the hard part. Execution is partway through optimised machine code, with values held in registers in a layout the interpreter has never heard of. The runtime must reconstruct the interpreter's state exactly as it would have been at that bytecode offset — rebuild the frame, unbake the assumptions, box values back into objects — and resume interpreting at the right step, as though the optimised version had never existed.</p>
+        <p>Then it starts watching again. If the function goes back to being hot and stable, it gets recompiled, in under a millisecond.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>TypeScript declares <code>name: string</code>. C declares <code>int a</code>. Both are type annotations. Why does one make the program faster and the other not?</summary>
+      <div class="ans">
+        <p>Because of which stage consumes the annotation. <code>tsc</code> checks it at build time and then <em>deletes</em> it — the emitted JavaScript is the same code with the types stripped out. Nothing downstream, not V8 and not the CPU, ever learns that <code>name</code> is a string, so nothing downstream can act on it.</p>
+        <p>C's <code>int</code> survives into code generation. It is exactly what lets the compiler decide the value is four bytes in a register and emit a single machine instruction instead of the eleven-step ceremony Python performs.</p>
+        <p>The general shape: an annotation only buys speed if it reaches the stage that generates code. This is also why AOT-compiling Python doesn't give you C speed — there are no types to reach that stage.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>A Spark job with a Python UDF is far slower than the same logic in native expressions. Why, structurally?</summary>
+      <div class="ans">
+        <p>Spark's whole-stage code generation fuses a chain of operators into one generated Java loop, which the JVM then JITs. A Python UDF is a hole in that loop: Spark cannot generate Java for code it cannot see.</p>
+        <p>So the pipeline has to stop at the UDF, serialise rows, ship them to a separate Python process, box each value into a Python object, run the function, and bring the results back. Every optimisation in this page is switched off for that stretch — no fusion, no JIT, full boxing, plus inter-process transfer.</p>
+        <p>Arrow-based pandas UDFs help because they at least move columnar batches instead of row-at-a-time objects, but the process boundary remains. An awkward native expression usually beats an elegant UDF.</p>
+      </div>
+    </details>
+  </section>
+
+  <footer class="measure">
+    <div class="in">
+      <a href="https://github.com/dinith-heshan/learn/issues/new?title=Correction:%20compilers-and-interpreters&labels=correction">Suggest a correction</a>
+      <a href="../../">learn/</a>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ── the pipeline explorer ──────────────────────────────────── */
+
+  var SYS = [
+    {
+      id: "c", name: "C, Rust, Go",
+      start: "source code",
+      hops: [
+        { to: "machine code", label: "compile", when: "aot" },
+        { to: "output",       label: "the CPU executes it", when: "run" }
+      ],
+      knows: "Types are declared in the source, so every decision is settled before you run.",
+      cost: "None. Peak speed from the first instruction.",
+      catch: "Can only use facts it can prove — code must be correct for every legal input."
+    },
+    {
+      id: "cpython", name: "CPython",
+      start: "source code",
+      hops: [
+        { to: "bytecode", label: "compile, cached in __pycache__", when: "aot" },
+        { to: "output",   label: "interpret the bytecode", when: "run" }
+      ],
+      knows: "Nothing in advance. Every value carries its type and is consulted on each operation.",
+      cost: "Almost none, but there is no peak to reach either.",
+      catch: "Translation stops before machine code, and values stay boxed."
+    },
+    {
+      id: "java", name: "Java, C#",
+      start: "source code",
+      hops: [
+        { to: "bytecode",     label: "javac", when: "aot" },
+        { to: "machine code", label: "interpret, then JIT what gets hot", when: "jit" },
+        { to: "output",       label: "the CPU executes it", when: "run" }
+      ],
+      knows: "Types from the source, plus what the JIT observes — which classes are loaded, which branches run.",
+      cost: "Real. A fresh JVM is sluggish until the hot code is compiled.",
+      catch: "Worth it only for processes that live long enough to warm up."
+    },
+    {
+      id: "v8", name: "JavaScript (V8)",
+      start: "source code",
+      hops: [
+        { to: "bytecode",     label: "parse and compile, on load", when: "jit" },
+        { to: "machine code", label: "JIT once hot and stable", when: "jit" },
+        { to: "output",       label: "the CPU executes it", when: "run" }
+      ],
+      knows: "Nothing in advance — everything is learned by watching values flow through.",
+      cost: "Everything happens at runtime, so the first pass through any code is slow.",
+      catch: "Every assumption needs a guard, and a wrong guess means deoptimising mid-execution."
+    },
+    {
+      id: "ts", name: "TypeScript",
+      start: "source code",
+      hops: [
+        { to: "JavaScript",   label: "tsc — types checked, then erased", when: "aot" },
+        { to: "machine code", label: "V8: bytecode, then JIT once hot", when: "jit" },
+        { to: "output",       label: "the CPU executes it", when: "run" }
+      ],
+      knows: "The types are gone by the time anything can act on them. At runtime, exactly what V8 knows.",
+      cost: "Same as JavaScript. The build step costs your time, not the program's.",
+      catch: "The annotations buy correctness, not speed. Nothing downstream sees them."
+    },
+    {
+      id: "wasm", name: "Rust → WebAssembly",
+      start: "source code",
+      hops: [
+        { to: "wasm",         label: "rustc, to a portable instruction set", when: "aot" },
+        { to: "machine code", label: "compiled while it downloads", when: "jit" },
+        { to: "output",       label: "the CPU executes it", when: "run" }
+      ],
+      knows: "Types from Rust, all the way down. The wasm carries the decisions already made.",
+      cost: "Small. Wasm was designed to be compiled in one streaming pass, never interpreted.",
+      catch: "A compile target rather than a language — something else has to produce it."
+    },
+    {
+      id: "graal", name: "GraalVM Native Image",
+      start: "source code",
+      hops: [
+        { to: "bytecode",     label: "javac", when: "aot" },
+        { to: "machine code", label: "native-image, whole program", when: "aot" },
+        { to: "output",       label: "the CPU executes it", when: "run" }
+      ],
+      knows: "Everything statically provable about a closed world — reflection has to be declared up front.",
+      cost: "None. Starts in milliseconds instead of hundreds.",
+      catch: "No speculation and no deoptimisation, so peak throughput is usually below a warmed JVM."
+    },
+    {
+      id: "pypy", name: "PyPy (tracing)",
+      start: "source code",
+      hops: [
+        { to: "bytecode",     label: "compile", when: "aot" },
+        { to: "machine code", label: "trace a hot loop, compile that one path", when: "jit" },
+        { to: "output",       label: "the CPU executes it", when: "run" }
+      ],
+      knows: "The exact sequence one loop iteration actually performed, straight through calls and branches.",
+      cost: "Warm-up, plus re-tracing whenever behaviour shifts.",
+      catch: "Excellent on tight numeric loops, shaky when control flow varies each iteration."
+    }
+  ];
+
+  var TAG = { aot: "before", jit: "while", run: "run" };
+
+  var pick  = document.getElementById("pick");
+  var chain = document.getElementById("chain");
+  var facts = document.getElementById("facts");
+  var current = 0;
+
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
+
+  function render(i) {
+    current = i;
+    var s = SYS[i];
+
+    Array.prototype.forEach.call(pick.children, function (b, j) {
+      b.setAttribute("aria-pressed", j === i ? "true" : "false");
+    });
+
+    chain.textContent = "";
+    chain.appendChild(el("div", "nd", s.start));
+
+    var drawn = false;
+    s.hops.forEach(function (h) {
+      if (!drawn && h.when !== "aot") {
+        var d = el("div", "divider");
+        d.appendChild(el("span", null, "the program starts running"));
+        chain.appendChild(d);
+        drawn = true;
+      }
+      var e = el("div", "eg " + h.when);
+      e.appendChild(el("span", "tag", TAG[h.when]));
+      e.appendChild(el("span", "lbl", h.label));
+      chain.appendChild(e);
+      chain.appendChild(el("div", "nd" + (h.to === "output" ? " term" : ""), h.to));
+    });
+
+    facts.textContent = "";
+    [["What it knows", s.knows], ["Cost at startup", s.cost], ["The catch", s.catch]]
+      .forEach(function (pair) {
+        var w = el("div");
+        w.appendChild(el("dt", null, pair[0]));
+        w.appendChild(el("dd", null, pair[1]));
+        facts.appendChild(w);
+      });
+  }
+
+  SYS.forEach(function (s, i) {
+    var b = el("button", null, s.name);
+    b.type = "button";
+    b.setAttribute("aria-pressed", "false");
+    b.addEventListener("click", function () { render(i); });
+    pick.appendChild(b);
+  });
+  render(0);
+
+  /* ── the a + b stepper ──────────────────────────────────────── */
+
+  var STEPS = [
+    "Follow the pointer for a, to wherever that object lives",
+    "Read its type field — what am I dealing with?",
+    "Follow the pointer for b",
+    "Read its type field",
+    "Look up which addition applies to that pair of types",
+    "Call it",
+    "Unpack the numeric value out of each object",
+    "Add them",
+    "Allocate a brand new object on the heap for the answer",
+    "Fill in its type field and set its reference count",
+    "Return a pointer to it"
+  ];
+  var WORK = 7;
+
+  var list  = document.getElementById("stp-list");
+  var count = document.getElementById("stp-count");
+  var prev  = document.getElementById("stp-prev");
+  var next  = document.getElementById("stp-next");
+  var reset = document.getElementById("stp-reset");
+  var at = 0;
+
+  STEPS.forEach(function (t, i) {
+    var li = el("li", i === WORK ? "work" : null, t + (i === WORK ? "  ← the work" : ""));
+    list.appendChild(li);
+  });
+
+  function paint() {
+    Array.prototype.forEach.call(list.children, function (li, i) {
+      li.classList.toggle("on", i === at);
+      li.classList.toggle("done", i < at);
+    });
+    count.textContent = "step " + (at + 1) + " of " + STEPS.length;
+    prev.disabled = at === 0;
+    next.disabled = at === STEPS.length - 1;
+  }
+
+  next.addEventListener("click",  function () { if (at < STEPS.length - 1) { at++; paint(); } });
+  prev.addEventListener("click",  function () { if (at > 0) { at--; paint(); } });
+  reset.addEventListener("click", function () { at = 0; paint(); });
+  paint();
+})();
+</script>
+
+</body>
+</html>
