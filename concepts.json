@@ -11,6 +11,12 @@
       "title": "Compilers and interpreters",
       "summary": "The split is when translation happens, not which language you use. Bytecode, VMs and JIT follow from that.",
       "added": "2026-09-05"
+    },
+    {
+      "slug": "vim-editing-grammar",
+      "title": "Vim's editing grammar",
+      "summary": "Vim commands compose from operators and nouns, so most were never designed individually.",
+      "added": "2026-09-06"
     }
   ]
 }
