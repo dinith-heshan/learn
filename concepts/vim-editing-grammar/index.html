@@ -65,163 +65,124 @@ body {
 </style>
 
 <style>
-/* ---- page-specific ---- */
+/* ---------- page-specific ---------- */
 :root { --ease: cubic-bezier(.22,.68,.32,1); }
 
-/* return strip */
 .strip {
   display: flex; justify-content: space-between; align-items: baseline;
-  border-bottom: 1px solid var(--rule);
-  padding: 18px 0 12px; margin-bottom: 46px;
-  font-size: 13px;
+  border-bottom: 1px solid var(--rule); padding: 18px 0 12px; font-size: 13px;
 }
-.strip a { color: var(--c2); text-decoration: none; font-weight: 600; letter-spacing: .01em; }
+.strip a { color: var(--c2); text-decoration: none; font-weight: 600; }
 .strip a:hover { text-decoration: underline; }
 .strip time { color: var(--faint); font-variant-numeric: tabular-nums; }
 
-/* title block */
-h1 { font-size: 40px; line-height: 1.12; margin: 0 0 14px; letter-spacing: -.018em; font-weight: 640; }
-.standfirst { font-size: 19px; line-height: 1.5; color: var(--muted); margin: 0 0 30px; }
-.lede { margin: 0 0 44px; }
+h1 { font-size: 38px; line-height: 1.12; margin: 34px 0 12px; letter-spacing: -.018em; font-weight: 640; }
+.standfirst { font-size: 18px; line-height: 1.5; color: var(--muted); margin: 0 0 8px; }
+.orient { font-size: 14.5px; color: var(--faint); margin: 0 0 30px; }
 
-/* layout */
-.layout { display: grid; grid-template-columns: minmax(0,1fr) 500px; gap: 60px; }
-.prose { grid-column: 1; grid-row: 1; max-width: 68ch; }
-.pane  { grid-column: 2; grid-row: 1; }
-.sticky { position: sticky; top: 24px; max-height: calc(100vh - 48px); overflow-y: auto; }
-
-/* prose */
-.prose h2 {
-  font-size: 15px; font-weight: 700; letter-spacing: .005em;
-  margin: 46px 0 14px; padding-bottom: 7px; border-bottom: 1px solid var(--rule-soft);
+/* ---------- grammar strip ---------- */
+.grammar {
+  background: var(--panel); border: 1px solid var(--rule); border-radius: 7px;
+  padding: 16px 18px 15px; margin: 0 0 26px;
 }
-.prose h2:first-child { margin-top: 0; }
-.prose h3 { font-size: 16px; font-weight: 660; margin: 28px 0 8px; }
-.prose p { margin: 0 0 15px; }
-.prose ul { margin: 0 0 15px; padding-left: 20px; }
-.prose li { margin-bottom: 7px; }
-code { font-family: var(--mono); font-size: .875em; background: var(--panel); border: 1px solid var(--rule-soft); border-radius: 3px; padding: .5px 4px; }
-.k1 code, code.k1 { color: var(--c1); background: var(--c1-bg); border-color: transparent; }
-.k2 code, code.k2 { color: var(--c2); background: var(--c2-bg); border-color: transparent; }
-.k3 code, code.k3 { color: var(--c3); background: var(--c3-bg); border-color: transparent; }
-
-/* inline callout */
-.flag {
-  border-left: 3px solid var(--rule); background: var(--panel);
-  padding: 12px 15px; margin: 0 0 15px; font-size: 15px; color: var(--muted);
+.grow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 8px; }
+.glab {
+  font-size: 11px; font-weight: 700; width: 92px; flex: 0 0 92px; line-height: 1.3;
 }
-.flag strong { color: var(--ink); font-weight: 640; }
-
-/* rules table */
-.rules { width: 100%; border-collapse: collapse; margin: 0 0 15px; font-size: 15px; }
-.rules th { text-align: left; font-weight: 640; font-size: 13px; color: var(--faint); padding: 0 12px 6px 0; border-bottom: 1px solid var(--rule); }
-.rules td { padding: 8px 12px 8px 0; border-bottom: 1px solid var(--rule-soft); vertical-align: top; }
-.rules td:first-child { white-space: nowrap; }
-
-/* ---- the composer ---- */
-.panel {
-  background: var(--panel); border: 1px solid var(--rule);
-  border-radius: 6px; padding: 20px;
-}
-.pane-lede { margin: 0 0 18px; font-size: 14px; line-height: 1.5; color: var(--muted); }
-.group { margin-bottom: 14px; }
-.glabel {
-  font-size: 12px; font-weight: 700; margin: 0 0 7px; display: flex; gap: 8px; align-items: baseline;
-}
-.glabel span { font-weight: 400; color: var(--faint); font-size: 11.5px; }
-.gl1 { color: var(--c1); }
-.gl2 { color: var(--c2); }
-.gl3 { color: var(--c3); }
-.btns { display: flex; flex-wrap: wrap; gap: 6px; }
-.btn {
-  font-family: var(--mono); font-size: 13px; font-weight: 600;
-  min-width: 44px; min-height: 44px; padding: 0 10px;
+.gl1 { color: var(--c1); } .gl2 { color: var(--c2); } .gl3 { color: var(--c3); }
+.chip {
+  font-family: var(--mono); font-size: 12.5px; font-weight: 600;
+  min-width: 44px; min-height: 44px; padding: 0 9px;
   border: 1px solid var(--rule); background: transparent; color: var(--muted);
   border-radius: 4px; cursor: pointer;
-  transition: background 160ms var(--ease), color 160ms var(--ease), border-color 160ms var(--ease);
+  transition: background-color 160ms var(--ease), color 160ms var(--ease), border-color 160ms var(--ease);
 }
-.btn:hover { border-color: var(--faint); }
-.o1[aria-pressed="true"] { background: var(--c1-bg); color: var(--c1); border-color: var(--c1); }
-.o2[aria-pressed="true"] { background: var(--c2-bg); color: var(--c2); border-color: var(--c2); }
-.o3[aria-pressed="true"] { background: var(--c3-bg); color: var(--c3); border-color: var(--c3); }
+.chip:hover { border-color: var(--faint); }
+.c1chip[aria-pressed="true"] { background: var(--c1-bg); color: var(--c1); border-color: var(--c1); }
+.c2chip[aria-pressed="true"] { background: var(--c2-bg); color: var(--c2); border-color: var(--c2); }
+.c3chip[aria-pressed="true"] { background: var(--c3-bg); color: var(--c3); border-color: var(--c3); }
 
-.cmdbar { margin: 18px 0 4px; border-top: 1px solid var(--rule-soft); padding-top: 14px; }
-.cmd { font-family: var(--mono); font-size: 22px; font-weight: 700; letter-spacing: .02em; }
-.cmd .p1 { color: var(--c1); }
-.cmd .p2 { color: var(--c2); }
-.cmd .p3 { color: var(--c3); }
-.cmdmeta { font-size: 12px; color: var(--faint); margin-left: 10px; font-family: var(--sans); font-weight: 400; letter-spacing: 0; }
-.cmdnote { display: block; font-size: 12.5px; line-height: 1.45; color: var(--muted); margin-top: 7px; min-height: 2.9em; }
-.cmdnote.bad { color: var(--c1); }
+.gout { border-top: 1px solid var(--rule-soft); margin-top: 12px; padding-top: 12px;
+        display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; }
+#gcmd { font-family: var(--mono); font-size: 26px; font-weight: 700; letter-spacing: .02em; }
+#gcmd .a { color: var(--c1); }
+#gcmd .b2 { color: var(--c2); }
+#gcmd .b3 { color: var(--c3); }
+#gread { font-size: 15px; color: var(--ink); }
+#gnote { flex: 1 1 100%; font-size: 12.5px; line-height: 1.45; color: var(--muted); min-height: 2.9em; margin: 0; }
+.gcount { font-size: 11.5px; color: var(--faint); margin: 10px 0 0; }
 
-.bufhead {
-  font-size: 11.5px; color: var(--faint); margin: 14px 0 5px;
-  display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
+/* ---------- toolbar ---------- */
+.toolbar {
+  position: sticky; top: 0; z-index: 5; background: var(--bg);
+  padding: 10px 0 11px; margin-bottom: 18px; border-bottom: 1px solid var(--rule);
+  display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
 }
-.bufhead .tag { font-family: var(--mono); }
-.codewrap { border: 1px solid var(--rule-soft); border-radius: 4px; overflow-x: auto; }
-.code {
-  font-family: var(--mono); font-size: 12px; line-height: 1.55;
-  white-space: pre; padding: 9px 10px; min-width: max-content;
-}
-.code:focus-visible { outline-offset: -2px; }
-#buf { cursor: text; }
-.bl { min-height: 1.55em; }
-.ch { transition: background-color 160ms var(--ease); }
-.sel.k2, .lsel.k2 { background: var(--c2-bg); color: var(--c2); box-shadow: inset 0 -1px 0 var(--c2); }
-.sel.k3, .lsel.k3 { background: var(--c3-bg); color: var(--c3); box-shadow: inset 0 -1px 0 var(--c3); }
-.lsel { display: block; }
-.cur { background: var(--ink) !important; color: var(--panel) !important; box-shadow: none !important; }
-.caret { color: var(--c1); font-weight: 700; }
-#res { color: var(--muted); }
-.count { font-size: 12px; color: var(--faint); margin: 14px 0 0; text-align: right; }
-
-/* recall */
-.recall { margin: 64px 0 0; }
-.recall h2 { font-size: 15px; font-weight: 700; margin: 0 0 14px; padding-bottom: 7px; border-bottom: 1px solid var(--rule-soft); }
-details {
+#filter {
+  flex: 1 1 260px; max-width: 420px; min-height: 44px;
+  font-family: var(--sans); font-size: 14.5px; color: var(--ink);
   background: var(--panel); border: 1px solid var(--rule); border-radius: 5px;
-  margin-bottom: 8px; overflow: hidden;
+  padding: 0 12px;
 }
+#filter::placeholder { color: var(--faint); }
+#hits { font-size: 12.5px; color: var(--faint); font-variant-numeric: tabular-nums; }
+
+/* ---------- the sheet ---------- */
+.sheet { columns: 21rem; column-gap: 20px; }
+.card {
+  break-inside: avoid; -webkit-column-break-inside: avoid;
+  background: var(--panel); border: 1px solid var(--rule); border-radius: 6px;
+  padding: 13px 15px 14px; margin: 0 0 20px;
+}
+.card h2 { font-size: 13.5px; font-weight: 700; margin: 0 0 3px; letter-spacing: .005em; }
+.card h2.h1c { color: var(--c1); }
+.card h2.h2c { color: var(--c2); }
+.card h2.h3c { color: var(--c3); }
+.card .sub { font-size: 11.5px; line-height: 1.45; color: var(--faint); margin: 0 0 10px; }
+.rows { display: grid; grid-template-columns: max-content 1fr; column-gap: 13px; row-gap: 6px; }
+.row { display: contents; }
+.row.hide { display: none; }
+.k { font-family: var(--mono); font-size: 12.5px; font-weight: 600; white-space: nowrap; line-height: 1.45; }
+.k.t1 { color: var(--c1); } .k.t2 { color: var(--c2); } .k.t3 { color: var(--c3); }
+.d { font-size: 12.5px; line-height: 1.45; color: var(--muted); }
+.d b { color: var(--ink); font-weight: 640; }
+.card.hide { display: none; }
+mark { background: var(--c2-bg); color: var(--c2); border-radius: 2px; padding: 0 1px; }
+
+/* ---------- recall ---------- */
+.recall { margin: 46px 0 0; }
+.recall h2 { font-size: 15px; font-weight: 700; margin: 0 0 14px; padding-bottom: 7px; border-bottom: 1px solid var(--rule-soft); }
+details { background: var(--panel); border: 1px solid var(--rule); border-radius: 5px; margin-bottom: 8px; overflow: hidden; }
 summary {
-  cursor: pointer; padding: 13px 16px; min-height: 44px; font-weight: 560;
+  cursor: pointer; padding: 12px 15px; min-height: 44px; font-weight: 560; font-size: 15px;
   list-style: none; display: flex; gap: 11px; align-items: flex-start;
   transition: background-color 160ms var(--ease);
 }
 summary::-webkit-details-marker { display: none; }
 summary:hover { background: var(--c2-bg); }
-summary::before {
-  content: "+"; font-family: var(--mono); color: var(--c2); font-weight: 700;
-  flex: 0 0 auto; line-height: 1.4;
-}
+summary::before { content: "+"; font-family: var(--mono); color: var(--c2); font-weight: 700; flex: 0 0 auto; line-height: 1.4; }
 details[open] summary::before { content: "\2212"; }
 details[open] summary { border-bottom: 1px solid var(--rule-soft); }
-.answer { padding: 14px 16px 15px 40px; color: var(--muted); font-size: 15px; }
-.answer p { margin: 0 0 11px; }
+.answer { padding: 13px 15px 14px 39px; color: var(--muted); font-size: 14.5px; }
+.answer p { margin: 0 0 10px; }
 .answer p:last-child { margin: 0; }
+code { font-family: var(--mono); font-size: .88em; background: var(--bg); border: 1px solid var(--rule-soft); border-radius: 3px; padding: .5px 4px; }
 
-/* footer */
-footer {
-  margin: 64px 0 0; border-top: 1px solid var(--rule);
-  background: var(--panel); padding: 20px 0 26px;
-  font-size: 13.5px; color: var(--faint);
-}
+/* ---------- footer ---------- */
+footer { margin: 52px 0 0; border-top: 1px solid var(--rule); background: var(--panel); padding: 20px 0 26px; font-size: 13.5px; color: var(--faint); }
 .footer-inner { display: flex; gap: 22px; flex-wrap: wrap; align-items: baseline; }
 footer a { color: var(--c2); }
 
 @media (max-width: 900px) {
-  .layout { display: block; }
-  .pane { margin: 0 0 42px; }
-  .sticky { position: static; max-height: none; overflow: visible; }
-  h1 { font-size: 33px; }
-  .standfirst { font-size: 17.5px; }
+  h1 { font-size: 31px; }
+  .standfirst { font-size: 16.5px; }
+  .glab { width: auto; flex: 1 0 100%; margin-bottom: 2px; }
 }
 @media (max-width: 560px) {
-  h1 { font-size: 28px; }
-  .standfirst { font-size: 16.5px; }
+  h1 { font-size: 27px; }
   body { font-size: 15.5px; }
-  .code { font-size: 10.75px; }
-  .cmd { font-size: 19px; }
+  .sheet { columns: 1; }
+  #gcmd { font-size: 22px; }
 }
 </style>
 </head>
@@ -233,166 +194,338 @@ footer a { color: var(--c2); }
     <time datetime="2026-09-06">2026-09-06</time>
   </div>
 
-  <header class="measure">
+  <div class="measure">
     <h1>Vim's editing grammar</h1>
-    <p class="standfirst">Vim commands are a verb and a noun, composed at the moment you type them. Most of the commands you will use were never designed by anyone.</p>
-    <p class="lede">Learning vim as a list of shortcuts is learning the wrong thing, and it is why the list feels endless. There are about eight verbs and thirty nouns. Everything else is the two multiplied together, which means the useful question is never "what is the shortcut for this" but "what is the verb, and what is the noun".</p>
-  </header>
-
-  <div class="layout">
-
-    <aside class="pane">
-      <div class="sticky">
-        <div class="panel">
-          <p class="pane-lede">Pick a verb and a noun. Then move the cursor: click any character in the buffer, or focus it and use <code>h j k l</code>. The noun decides the region, the verb decides what happens to it.</p>
-
-          <div class="group">
-            <h3 class="glabel gl1">Operator <span>what to do</span></h3>
-            <div class="btns" id="ops"></div>
-          </div>
-          <div class="group">
-            <h3 class="glabel gl2">Motion <span>travel from the cursor</span></h3>
-            <div class="btns" id="mots"></div>
-          </div>
-          <div class="group">
-            <h3 class="glabel gl3">Text object <span>a region around the cursor</span></h3>
-            <div class="btns" id="objs"></div>
-          </div>
-
-          <div class="cmdbar">
-            <span class="cmd" id="cmd"></span><span class="cmdmeta" id="cmdmeta"></span>
-            <span class="cmdnote" id="cmdnote"></span>
-          </div>
-
-          <div class="bufhead"><span>Buffer</span><span class="tag" id="postag"></span></div>
-          <div class="codewrap"><div class="code" id="buf" tabindex="0" role="application" aria-label="Sample buffer. Click a character or use h, j, k, l to move the cursor."></div></div>
-
-          <div class="bufhead"><span id="reshead">After</span><span class="tag" id="restag"></span></div>
-          <div class="codewrap"><div class="code" id="res"></div></div>
-
-          <p class="count">5 operators &times; 12 nouns = 60 commands</p>
-        </div>
-      </div>
-    </aside>
-
-    <main class="prose">
-
-      <h2>The trade that buys the vocabulary</h2>
-      <p>A keyboard has roughly fifty keys you can reach without a modifier. In an ordinary editor every one of them is spoken for: press <code>d</code>, you get a <code>d</code>. Commands therefore have to live somewhere worse, behind a chord or a menu or the mouse.</p>
-      <p>Vi's move was to notice that most editor time is not spent composing new text. It is spent moving through and restructuring text that already exists. So it gave that activity the whole keyboard, and made typing the state you enter deliberately and leave promptly. Open a file and <code>d</code> means delete, <code>w</code> means word, <code>p</code> means paste. The letters have become a vocabulary.</p>
-      <p>The cost is real: you have to know which state you are in, and every horror story about vim is that cost being paid before the benefit arrives. The benefit is not saved keystrokes. It is that single-letter commands can be placed next to each other and mean something.</p>
-
-      <h2>Verb, then noun</h2>
-      <p>The rule is one line:</p>
-      <p><code>{operator}{noun}</code> — the operator acts on exactly the text the noun describes.</p>
-      <p>Nobody implemented <span class="k1"><code>d</code></span><span class="k3"><code>ap</code></span>. It exists because <code>d</code> exists and <code>ap</code> exists. That is why learning one more noun is worth more than learning one more command: a noun arrives already multiplied by every verb you have.</p>
-      <p>Doubling the operator means the current line, whole lines only: <code>dd</code>, <code>yy</code>, <code>cc</code>, <code>&gt;&gt;</code>. For two-letter operators the last letter doubles, so <code>guu</code> lowercases a line.</p>
-      <p>Counts sit in front of either half and multiply if you use both, so <code>2d3w</code> deletes six words. In practice <code>3dd</code> is the only one worth reaching for. A noun that names its target beats a count that arrives at it, because counting rows on screen is something humans are slow and bad at.</p>
-
-      <h2>Two kinds of noun</h2>
-      <p>This is the distinction that takes longest to see and explains the most once seen.</p>
-      <p>A <strong class="k2">motion</strong> describes <em>travel</em>. It begins at the cursor and goes somewhere: <code>w</code>, <code>$</code>, <code>}</code>, <code>f(</code>. What it covers therefore depends entirely on where the cursor happens to be.</p>
-      <p>A <strong class="k3">text object</strong> describes a <em>region</em>. It does not start at the cursor, it <em>contains</em> the cursor: <code>iw</code>, <code>i(</code>, <code>ap</code>. Anywhere inside produces the same result.</p>
-      <p>Put the cursor in the middle of a word in the panel and compare <code>dw</code> with <code>diw</code>. The motion deletes the tail of the word. The object deletes the word. Now move the cursor two characters and try both again. Only one of them changed its mind.</p>
-      <p>Objects come in <code>i</code> (inner) and <code>a</code> (around) forms, and the two families define that split differently:</p>
-      <ul>
-        <li><strong>Pair objects</strong> — <code>i(</code>, <code>a"</code>, <code>i{</code>, <code>at</code>. Delimited. <code>i</code> is the contents, <code>a</code> adds the delimiters.</li>
-        <li><strong>Shape objects</strong> — <code>iw</code>, <code>ap</code>, <code>is</code>. No delimiters, only whitespace. <code>i</code> is the thing, <code>a</code> adds the whitespace that separates it from its neighbours.</li>
-      </ul>
-      <p>That second one is why <code>daw</code> closes the gap and <code>diw</code> leaves a double space, and why <code>dap</code> leaves a file correctly spaced where <code>dip</code> leaves a doubled blank line.</p>
-      <p>The two families also behave differently when the cursor is <em>outside</em> the region, which is a genuine inconsistency rather than something you have misunderstood. Quote objects search forward on the line, so <code>ci"</code> works from the start of the line. Bracket objects do not search at all, so <code>ci(</code> from outside the parens simply beeps. Try <code>i(</code> in the panel with the cursor on <code>return</code> and then on <code>path</code>.</p>
-
-      <h2>Why the noun list is open-ended</h2>
-      <p>When you press <code>d</code>, vim deletes nothing. It enters a state that is waiting for a noun, and only then acts. That state is a real mode called operator-pending, not a metaphor for one: neovim will show the half-typed command in the corner while you sit in it, and <code>Esc</code> gets you out.</p>
-      <p>Because it is a real mode, anything that can answer the question "which region" works with every operator automatically. Nobody writes the combination <code>daf</code>. You install one plugin that defines <code>af</code> as "a function", and <code>daf</code>, <code>yaf</code>, <code>caf</code>, <code>&gt;af</code>, <code>gcaf</code> and <code>!af</code> all exist that afternoon.</p>
-      <p>This matters because vim's built-in nouns know about characters, whitespace and matched delimiters, and nothing about your language. There is no built-in object for a function, an argument, or a Python block, since indentation has no closing brace for <code>i{</code> to find. That gap is filled by treesitter-based objects in neovim, and it is the strongest argument for neovim over vim on editing alone.</p>
-
-      <h2>The two rules that make it exact</h2>
-      <p>The grammar looks arbitrary at first because <code>dw</code>, <code>de</code> and <code>dj</code> all behave differently. They follow two properties that every noun carries.</p>
-      <h3>Linewise or characterwise</h3>
-      <p>A linewise noun operates on whole lines and discards your column. The vertical motions are linewise — <code>j</code>, <code>k</code>, <code>G</code>, <code>gg</code>, <code>H</code>, <code>L</code> — which is why <code>dj</code> removes two entire lines and cannot do anything else. Everything horizontal is characterwise. This is also why <code>dd</code> works at all: a doubled operator is a linewise noun covering the current line.</p>
-      <h3>Inclusive or exclusive</h3>
-      <p>A characterwise noun either takes the character it lands on or stops before it.</p>
-      <table class="rules">
-        <tr><th>Exclusive, stops before</th><th>Inclusive, takes it</th></tr>
-        <tr><td><code>w</code> <code>b</code> <code>0</code> <code>^</code> <code>{</code> <code>}</code> <code>/</code></td><td><code>e</code> <code>ge</code> <code>f</code> <code>t</code> <code>$</code> <code>%</code></td></tr>
-      </table>
-      <p>So <code>de</code> ends on the last letter of the word and <code>dw</code> runs to the start of the next one, taking the space between. And <code>df(</code> swallows the paren where <code>dt(</code> leaves it, which is the entire reason <code>t</code> exists.</p>
-      <p>You do not need to memorise the table. <code>:help w</code> prints the word <em>exclusive</em> in the entry and <code>:help e</code> prints <em>inclusive</em>. When a delete takes one character too many, that is the thing to look up.</p>
-      <div class="flag"><strong>Two deliberate exceptions.</strong> <code>cw</code> behaves like <code>ce</code> when the cursor is on a word, because changing a word and then having to retype the space it ate would be useless. And <code>dw</code> on the last word of a line stops at the line end instead of joining the next line. Both are documented, both break the rule on purpose. Knowing they exist stops you concluding you have misread the grammar.</div>
-
-      <h2>Repeatability changes which command is right</h2>
-      <p><code>.</code> repeats the last <em>change</em>, not the last command. Motions do not count as changes and do not reset it, so you can travel as far as you like in between. An entire insert session, from <code>i</code> to <code>Esc</code>, is one change: type <code>A</code> then a comma then <code>Esc</code>, and <code>j.</code> on the next line appends a comma there too, correctly, on a line of a different length.</p>
-      <p>This retroactively grades commands you already know. <code>ciw</code> beats <code>cw</code> not for the keystroke but because it works from anywhere in the word, so the repeat does too:</p>
-      <p><code>/old_name</code> &rarr; <code>ciw new_name</code> &rarr; <code>Esc</code> &rarr; <code>n</code> <code>.</code> <code>n</code> <code>.</code></p>
-      <p>That is find-and-replace with a human confirming each site, assembled from three things you already have.</p>
-      <p>It is also the concrete reason to prefer a noun over a visual selection. <code>.</code> does work after a visual-mode operation, but it repeats the <em>dimensions</em>: the same number of lines, or the same lines and columns for a block. So <code>Vjjjjd</code> then <code>.</code> deletes five lines wherever you are next, while <code>dap</code> then <code>.</code> deletes the next paragraph, whatever length it happens to be. One repeats a shape, the other repeats an intention.</p>
-      <p>Undo uses the same unit from the other side. One <code>u</code> undoes one change, which is why typing four lines and pressing <code>u</code> removes all four. Small, self-contained edits repeat cleanly and undo cleanly; a fifteen-keystroke wander in and out of insert mode does neither.</p>
-
-      <h2>There is no clipboard</h2>
-      <p>There are about thirty-six named slots called registers, and every yank, delete and change writes to at least one. <code>:reg</code> prints them all.</p>
-      <p>Register <code>"</code> is the default, and it receives yanks <em>and</em> deletes alike, which produces the single most common complaint about vim. Copy a line with <code>yy</code>, delete the line you meant to replace with <code>dd</code>, press <code>p</code>, and you get back the line you just deleted. Nothing is broken. Cut and copy are the same slot, and cut happens more often than you notice.</p>
-      <p>Register <code>0</code> receives yanks and nothing else. Deletes never touch it. So <code>"0p</code> means "paste the thing I actually copied", and it is the highest-value two characters in this whole page. The other direction works too: <code>"_dd</code> deletes into the black hole register and leaves your yank alone.</p>
-      <p>Two more worth having early. <code>"+</code> is the system clipboard, so <code>"+yap</code> copies a function out to paste in Slack. And <code>Ctrl-r 0</code> pastes a register without leaving insert mode, which on the command line has the variant <code>Ctrl-r Ctrl-w</code> to insert the word under the cursor.</p>
-
-      <h2>What people get wrong</h2>
-      <p><strong>That vim is fast because it saves keystrokes.</strong> Keystroke counting is the weakest case for it and loses to a good IDE on plenty of tasks. The case is composition and repeatability: nouns multiply across verbs, and <code>.</code> replays an intention rather than a shape.</p>
-      <p><strong>That <code>g</code> is an operator.</strong> Reasonable guess, since <code>gu</code> and <code>gU</code> take a noun exactly as <code>d</code> and <code>c</code> do. It is not one. <code>g</code> is a namespace prefix, like <code>z</code>, <code>[</code>, <code>]</code> and <code>Ctrl-w</code>: vim ran out of keys and opened a second page of the keyboard. What sits on that page is unrelated — <code>gu</code> and <code>gq</code> are operators, <code>gg</code> and <code>gj</code> are motions, and <code>gv</code>, <code>gi</code>, <code>gf</code> are neither. <code>:help g</code> is the index.</p>
-      <p><strong>That <code>i</code> means insert.</strong> It means insert <em>in normal mode</em>. After an operator it means "inner" and waits for an object. A key has no global meaning in vim; the whole keyboard is reinterpreted per mode, which is exactly what buys the vocabulary. <code>i I a A o O</code> are not a special category either — they are ordinary normal-mode commands that happen to change mode, sitting in the same bucket as <code>p</code>, <code>x</code> and <code>u</code>.</p>
-      <p><strong>That <code>hjkl</code> proves the design is a relic.</strong> Two things get conflated here. The key placement <em>is</em> an accident: Bill Joy wrote vi in 1976 on an ADM-3A terminal with arrows printed on those four keycaps and Escape where Tab is now. Modal editing is not an accident. The terminal died and the idea kept earning its keep, which is why it has since been reimplemented in VS Code, JetBrains, Emacs, browsers and shells.</p>
-
-      <h2>Vim or neovim</h2>
-      <p>For everything above, there is no difference. Same modes, same motions, same operators, same registers, and a vim tutorial from 2005 is still accurate about all of it.</p>
-      <p>What actually differs: neovim's config is Lua and its defaults are sane out of the box, where a bare vim <code>.vimrc</code> spends its first lines undoing 1976. Neovim ships an LSP client, treesitter, and a comment operator <code>gc</code> that vim needs a plugin for. Neovim also maps <code>Y</code> to <code>y$</code> by default, finally making it consistent with <code>D</code> and <code>C</code> — though some distributions map it back, so check with <code>:verbose nmap Y</code> rather than trusting it.</p>
-      <div class="flag"><strong>Version-dependent, so worth checking rather than assuming.</strong> Pasting over a visual selection with <code>P</code> instead of <code>p</code> leaves the register untouched, so the paste can be repeated. That behaviour arrived in vim 8.2.4242 and is in current neovim, but older builds and vim emulation layers in other editors may not have it. Neovim's clipboard also depends on an external tool (<code>xclip</code>, <code>wl-copy</code>, <code>win32yank</code>); if <code>"+y</code> silently does nothing, <code>:checkhealth clipboard</code> says why. Vim fails differently here — clipboard support is compiled in or it is not, and <code>:echo has('clipboard')</code> returning 0 means no amount of installing tools will help.</div>
-      <div class="flag">The panel on this page is a small reimplementation of vim's region rules for one fixed buffer, not vim itself. It follows the real definitions for the twelve nouns it offers, including the line-break exception on <code>w</code> and the linewise promotion of <code>}</code>, but it is a model. Anything surprising should be checked against <code>:help motion.txt</code>.</div>
-
-      <section class="recall">
-        <h2>Recall</h2>
-
-        <details>
-          <summary>Why does <code>dw</code> take the trailing space when <code>cw</code> does not?</summary>
-          <div class="answer">
-            <p><code>w</code> is exclusive and lands on the start of the next word, so the region runs from the cursor up to but not including that character, which means the space in between goes.</p>
-            <p><code>cw</code> should behave identically, and does not. It is a deliberate exception: it acts like <code>ce</code> when the cursor is on a word, because you are about to type a replacement and would otherwise have to retype the space you just ate. <code>dw</code> keeps the original behaviour because when you delete a word you usually do want the gap to close.</p>
-          </div>
-        </details>
-
-        <details>
-          <summary>You delete a five-line function with <code>V4jd</code>. The next function is seven lines. Why does <code>.</code> fail, and what should you have typed?</summary>
-          <div class="answer">
-            <p><code>.</code> after a visual-mode operation repeats the size, not the meaning: the same number of lines, or the same lines and columns for a block. So it deletes five lines of a seven-line function.</p>
-            <p><code>dap</code> instead. The noun names a region rather than measuring one, so the repeat re-evaluates it at the new cursor position and takes the whole paragraph, whatever its length. This is the general reason to prefer an operator plus noun over a selection whenever a noun exists for what you mean.</p>
-          </div>
-        </details>
-
-        <details>
-          <summary>You <code>yy</code> a line, navigate, <code>dd</code> the line you meant to replace, then <code>p</code>. The wrong text appears. What happened, and name both fixes.</summary>
-          <div class="answer">
-            <p>Yanks and deletes both write to the unnamed register, and <code>p</code> reads from it, so the <code>dd</code> overwrote the <code>yy</code>.</p>
-            <p>Fix one, after the fact: <code>"0p</code>. Register <code>0</code> only ever receives yanks, so it still holds the line. Fix two, in advance: <code>"_dd</code> throws the deleted line into the black hole register and leaves the unnamed one intact. <code>"0p</code> gets used more, because you usually notice the problem after the delete rather than before it.</p>
-          </div>
-        </details>
-
-        <details>
-          <summary>Nobody at any point wrote code implementing the command <code>&gt;ip</code>. Explain why it works.</summary>
-          <div class="answer">
-            <p>Pressing <code>&gt;</code> puts vim into operator-pending mode, a real mode whose only job is to wait for something that answers "which region". <code>ip</code> answers it. The operator then applies to whatever came back.</p>
-            <p>Since the two halves are independent, every operator works with every noun without anyone enumerating the pairs. It is also why a plugin that adds one new object immediately gains every operator you know, and why vim's plugin ecosystem composes better than most editors' do.</p>
-          </div>
-        </details>
-
-        <details>
-          <summary><code>i</code> appears twice in vim's command tables with unrelated meanings. Why is that not a conflict?</summary>
-          <div class="answer">
-            <p>Because the meaning is resolved by mode, not by key. In normal mode <code>i</code> enters insert mode. In operator-pending or visual mode it means "inner" and waits for an object. Nothing is shared between the two.</p>
-            <p>That reinterpretation is the whole trade: giving up the guarantee that a key does one fixed thing is what makes fifty keys carry hundreds of meanings. It is also why hitting <code>Esc</code> when you are confused is the right reflex — it puts you in a known state, so you know which reading the next key will get.</p>
-          </div>
-        </details>
-      </section>
-
-    </main>
+    <p class="standfirst">A verb and a noun, composed as you type them. Most vim commands were never designed by anyone.</p>
+    <p class="orient">Eight verbs, fourteen nouns on this page, and every pairing works. Build one below, then use the sheet as a lookup. Press <code>/</code> to filter it.</p>
   </div>
+
+  <!-- ---------- grammar strip ---------- -->
+  <section class="grammar" aria-label="Command builder">
+    <div class="grow">
+      <span class="glab gl1">Operator<br>what to do</span>
+      <span class="btns" id="ops"></span>
+    </div>
+    <div class="grow">
+      <span class="glab gl2">Motion<br>travel from cursor</span>
+      <span class="btns" id="mots"></span>
+    </div>
+    <div class="grow">
+      <span class="glab gl3">Text object<br>region around cursor</span>
+      <span class="btns" id="objs"></span>
+    </div>
+    <div class="gout">
+      <span id="gcmd"></span>
+      <span id="gread"></span>
+      <p id="gnote"></p>
+    </div>
+    <p class="gcount">8 operators &times; 14 nouns = 112 commands. Nobody implemented any of them individually.</p>
+  </section>
+
+  <!-- ---------- toolbar ---------- -->
+  <div class="toolbar">
+    <input id="filter" type="search" placeholder="Filter the sheet — try paren, register, linewise, undo" aria-label="Filter the cheatsheet">
+    <span id="hits"></span>
+  </div>
+
+  <!-- ---------- the sheet ---------- -->
+  <div class="sheet" id="sheet">
+
+    <section class="card">
+      <h2>Modes</h2>
+      <p class="sub">Normal is home, not just the start. Every finished edit ends there.</p>
+      <div class="rows">
+        <div class="row"><span class="k">Normal</span><span class="d">Keys run commands. <b>Esc</b> always returns here and is always safe.</span></div>
+        <div class="row"><span class="k">Insert</span><span class="d">Keys insert text. Entered with <b>i a o</b> and friends.</span></div>
+        <div class="row"><span class="k">Visual</span><span class="d"><b>v</b> characters, <b>V</b> lines, <b>Ctrl-v</b> block. Then press an operator.</span></div>
+        <div class="row"><span class="k">Cmdline</span><span class="d"><b>:</b> command, <b>/</b> <b>?</b> search. Enter runs it, Esc cancels.</span></div>
+        <div class="row"><span class="k">Op-pending</span><span class="d">After <b>d c y</b>, waiting for a noun. Neovim shows the pending keys bottom right.</span></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Into insert mode</h2>
+      <p class="sub">Pick the door that lands you where the edit is. A is the one you'll press most.</p>
+      <div class="rows">
+        <div class="row"><span class="k">i</span><span class="d">Before the cursor</span></div>
+        <div class="row"><span class="k">a</span><span class="d">After the cursor. Exists because the cursor sits on a character, so i can't reach past the last one</span></div>
+        <div class="row"><span class="k">I</span><span class="d">First non-blank of the line</span></div>
+        <div class="row"><span class="k">A</span><span class="d">End of the line</span></div>
+        <div class="row"><span class="k">o</span><span class="d">New line below, correctly indented</span></div>
+        <div class="row"><span class="k">O</span><span class="d">New line above</span></div>
+        <div class="row"><span class="k">gi</span><span class="d">Back to wherever you last left insert mode</span></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Getting unstuck</h2>
+      <p class="sub">When confused, press Esc first and reason afterwards.</p>
+      <div class="rows">
+        <div class="row"><span class="k">Esc</span><span class="d">Home. Harmless in normal mode</span></div>
+        <div class="row"><span class="k">Ctrl-[</span><span class="d">Byte-identical to Esc, and closer to your pinky</span></div>
+        <div class="row"><span class="k">Ctrl-c</span><span class="d">Mostly works, but skips hooks some plugins rely on</span></div>
+        <div class="row"><span class="k">Ctrl-q</span><span class="d">Unfreezes the terminal after you hit Ctrl-s for "save". Not a vim problem</span></div>
+        <div class="row"><span class="k">fg</span><span class="d">Brings nvim back after Ctrl-z suspended it</span></div>
+        <div class="row"><span class="k">:q :q! :w</span><span class="d">Quit, quit discarding, write</span></div>
+        <div class="row"><span class="k">ZZ :wq</span><span class="d">Write and quit</span></div>
+        <div class="row"><span class="k">:qa!</span><span class="d">Abandon everything, all files</span></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 class="h2c">Motions &mdash; inside a line</h2>
+      <p class="sub">W B E to travel, w b e to operate. Aim f at a rare character, then correct with ;</p>
+      <div class="rows">
+        <div class="row"><span class="k t2">w b e ge</span><span class="d">By word. Punctuation forms its own words, so <b>w</b> crosses <code>spark.read.parquet(</code> in seven presses</span></div>
+        <div class="row"><span class="k t2">W B E</span><span class="d">By WORD: whitespace-delimited only. Three presses for the same thing</span></div>
+        <div class="row"><span class="k t2">0 ^</span><span class="d">Column zero / first non-blank. For indented code you want ^</span></div>
+        <div class="row"><span class="k t2">$ g_</span><span class="d">End of line / last non-blank. $ will take trailing whitespace with it</span></div>
+        <div class="row"><span class="k t2">f{c} F{c}</span><span class="d">Find forward / back, land <b>on</b> it</span></div>
+        <div class="row"><span class="k t2">t{c} T{c}</span><span class="d">Till: land just <b>before</b> it. This is what makes ct( work</span></div>
+        <div class="row"><span class="k t2">; ,</span><span class="d">Repeat the last f or t, same / opposite direction</span></div>
+        <div class="row"><span class="k t2">3f"</span><span class="d">Counts work. Never crosses a line break</span></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 class="h2c">Motions &mdash; across the file</h2>
+      <p class="sub">} is "next thing" at whatever granularity you already put blank lines at.</p>
+      <div class="rows">
+        <div class="row"><span class="k t2">&#123; &#125;</span><span class="d">Previous / next blank line. Boundary must be <b>truly empty</b>; two spaces and it sails past</span></div>
+        <div class="row"><span class="k t2">%</span><span class="d">Matching bracket. If not on one, it scans forward on the line and jumps to that pair's match</span></div>
+        <div class="row"><span class="k t2">gg G</span><span class="d">First / last line</span></div>
+        <div class="row"><span class="k t2">42G :42</span><span class="d">Line 42. What you use when a stack trace hands you a number</span></div>
+        <div class="row"><span class="k t2">H M L</span><span class="d">Top / middle / bottom of the <b>screen</b>, not the file</span></div>
+        <div class="row"><span class="k t2">Ctrl-d Ctrl-u</span><span class="d">Half screen down / up. Ctrl-f Ctrl-b for full</span></div>
+        <div class="row"><span class="k">zz zt zb</span><span class="d">Redraw with the current line centred / at top / at bottom. Cursor stays put</span></div>
+        <div class="row"><span class="k t2">/pat ?pat</span><span class="d">Search forward / back. It's a <b>motion</b>, so d/foo works</span></div>
+        <div class="row"><span class="k t2">n N</span><span class="d">Next / previous match</span></div>
+        <div class="row"><span class="k t2">* #</span><span class="d">Search for the word under the cursor. Whole words only; g* for loose</span></div>
+        <div class="row"><span class="k">:noh</span><span class="d">Clear the highlighting when it gets noisy</span></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 class="h1c">Operators</h2>
+      <p class="sub">Doubling means the current line: dd yy cc &gt;&gt;. Two-letter ops double the last letter, so guu.</p>
+      <div class="rows">
+        <div class="row"><span class="k t1">d</span><span class="d">Delete</span></div>
+        <div class="row"><span class="k t1">c</span><span class="d">Change: delete, then insert mode</span></div>
+        <div class="row"><span class="k t1">y</span><span class="d">Yank. Also fills register 0</span></div>
+        <div class="row"><span class="k t1">&gt; &lt;</span><span class="d">Indent / dedent. Always linewise</span></div>
+        <div class="row"><span class="k t1">=</span><span class="d">Reindent by the filetype's rules. The fix for badly pasted code</span></div>
+        <div class="row"><span class="k t1">gu gU g~</span><span class="d">Lowercase / uppercase / toggle case</span></div>
+        <div class="row"><span class="k t1">gq</span><span class="d">Reflow to the wrap width</span></div>
+        <div class="row"><span class="k t1">gc</span><span class="d">Comment out. Built into neovim 0.10+; vim needs a plugin</span></div>
+        <div class="row"><span class="k t1">!</span><span class="d">Pipe through a shell command and replace with the output. <b>!ip</b> then <code>sort</code> or <code>jq .</code></span></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 class="h3c">Text objects &mdash; pairs</h2>
+      <p class="sub">i = the contents, a = plus the delimiters. Brackets work across lines; quotes never leave the line.</p>
+      <div class="rows">
+        <div class="row"><span class="k t3">i( a(</span><span class="d">Parens. <code>i)</code> <code>ib</code> <code>ab</code> are the same thing</span></div>
+        <div class="row"><span class="k t3">i&#123; a&#123;</span><span class="d">Braces. <code>iB</code> <code>aB</code> are aliases. ci&#123; rewrites a whole dict from anywhere inside</span></div>
+        <div class="row"><span class="k t3">i[ a[</span><span class="d">Square brackets</span></div>
+        <div class="row"><span class="k t3">i&lt; a&lt;</span><span class="d">Angle brackets</span></div>
+        <div class="row"><span class="k t3">i" a"</span><span class="d">Double-quoted string. Also <code>i'</code> and <code>i`</code></span></div>
+        <div class="row"><span class="k t3">it at</span><span class="d">XML / HTML tag pair</span></div>
+        <div class="row"><span class="k t3">2i(</span><span class="d">Counts go <b>outward</b> a nesting level, not forward</span></div>
+        <div class="row"><span class="k">vi( i( i(</span><span class="d">Repeating a pair object in visual mode expands the selection a level at a time</span></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 class="h3c">Text objects &mdash; shapes</h2>
+      <p class="sub">No delimiters, so i and a split differently: i = the thing, a = plus the whitespace around it.</p>
+      <div class="rows">
+        <div class="row"><span class="k t3">iw aw</span><span class="d">Word. <b>aw</b> takes the trailing space so the gap closes; <b>iw</b> leaves it</span></div>
+        <div class="row"><span class="k t3">iW aW</span><span class="d">WORD, whitespace-delimited</span></div>
+        <div class="row"><span class="k t3">ip ap</span><span class="d">Block of non-blank lines. <b>dap</b> takes the blank line after, so spacing stays right</span></div>
+        <div class="row"><span class="k t3">is as</span><span class="d">Sentence. Fine for prose, near-useless in code</span></div>
+        <div class="row"><span class="k">ciw</span><span class="d">The rename you'll use most. Works from anywhere in the word, unlike cw</span></div>
+        <div class="row"><span class="k">no if af</span><span class="d">Vim has no object for a function, an argument, or an indented block. Treesitter adds them</span></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>One-key edits</h2>
+      <p class="sub">Shortcuts for common operator-and-noun pairs.</p>
+      <div class="rows">
+        <div class="row"><span class="k">dd yy cc</span><span class="d">Whole current line</span></div>
+        <div class="row"><span class="k">D C</span><span class="d">Same as <b>d$</b> and <b>c$</b>. C is how you rewrite the tail of a line</span></div>
+        <div class="row"><span class="k">Y</span><span class="d">Neovim maps it to <b>y$</b>; plain vim does <b>yy</b>. Check with <code>:verbose nmap Y</code></span></div>
+        <div class="row"><span class="k">x X</span><span class="d">Delete the character under / before the cursor</span></div>
+        <div class="row"><span class="k">s S</span><span class="d">Substitute character / whole line</span></div>
+        <div class="row"><span class="k">r{c}</span><span class="d">Replace one character without entering insert mode</span></div>
+        <div class="row"><span class="k">J gJ</span><span class="d">Join with the line below, with / without inserting a space</span></div>
+        <div class="row"><span class="k">~</span><span class="d">Toggle case of one character</span></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Repeat</h2>
+      <p class="sub">Repeats the last change, not the last command. Motions don't count and don't reset it.</p>
+      <div class="rows">
+        <div class="row"><span class="k">.</span><span class="d">Replay the last change. A whole insert session, <b>i</b> through <b>Esc</b>, counts as one</span></div>
+        <div class="row"><span class="k">3.</span><span class="d">Replay with the count <b>replaced</b> by 3, not multiplied</span></div>
+        <div class="row"><span class="k">A;&lt;Esc&gt; j.</span><span class="d">The positioning is part of the change, so it re-runs correctly on a line of a different length</span></div>
+        <div class="row"><span class="k">/x ciw &lt;Esc&gt; n.</span><span class="d">Find-and-replace with you confirming each site</span></div>
+        <div class="row"><span class="k">Ctrl-g u</span><span class="d">Typed in insert mode, ends the current change block and starts a new one</span></div>
+        <div class="row"><span class="k">@:</span><span class="d">Repeat the last <b>:</b> command. Dot cannot reach ex commands</span></div>
+        <div class="row"><span class="k">arrows</span><span class="d">Moving the cursor mid-insert breaks the change in two, so . repeats only the tail. Don't</span></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Undo</h2>
+      <p class="sub">Undo is a tree, not a stack. A branch you undo is never destroyed.</p>
+      <div class="rows">
+        <div class="row"><span class="k">u Ctrl-r</span><span class="d">Undo / redo one change. Same unit the dot repeats, which is why u wipes a whole typed paragraph</span></div>
+        <div class="row"><span class="k">3u</span><span class="d">Three changes back</span></div>
+        <div class="row"><span class="k">U</span><span class="d">Undo all recent changes on the last-changed line. Itself undoable</span></div>
+        <div class="row"><span class="k">g- g+</span><span class="d">Back / forward in <b>time</b>, across every branch. This is how you reach the rewrite you abandoned</span></div>
+        <div class="row"><span class="k">:undolist</span><span class="d">Branch points with timestamps</span></div>
+        <div class="row"><span class="k">:earlier 10m</span><span class="d">Rewind ten minutes. <code>:later 30s</code> goes forward</span></div>
+        <div class="row"><span class="k">:earlier 5f</span><span class="d">Back five file <b>writes</b>. "Show me two saves ago" without touching git</span></div>
+        <div class="row"><span class="k">:set undofile</span><span class="d">Persist the tree to disk. <b>Off by default</b> in both editors</span></div>
+        <div class="row"><span class="k">:Undotree</span><span class="d">Visual browser, built into neovim 0.12 after <code>:packadd nvim.undotree</code></span></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Registers</h2>
+      <p class="sub">There is no clipboard, just 36 slots. yy then dd then p gives the wrong text, because both wrote to the same one.</p>
+      <div class="rows">
+        <div class="row"><span class="k">"{r}{cmd}</span><span class="d">The prefix that names a register: <code>"ayy</code>, <code>"ap</code>, <code>"ad&#125;</code></span></div>
+        <div class="row"><span class="k">""</span><span class="d">Unnamed. Every yank, delete and change writes here, which is the whole problem</span></div>
+        <div class="row"><span class="k">"0</span><span class="d"><b>Yanks only.</b> Deletes never touch it, so <b>"0p</b> is "paste what I actually copied"</span></div>
+        <div class="row"><span class="k">"_</span><span class="d">Black hole. <b>"_dd</b> deletes without stomping your yank</span></div>
+        <div class="row"><span class="k">"1 &ndash; "9</span><span class="d">Delete ring, most recent first. After <code>"1p</code>, the dot increments the number</span></div>
+        <div class="row"><span class="k">"-</span><span class="d">Small deletes, less than a line, so they don't flush the ring</span></div>
+        <div class="row"><span class="k">"a &ndash; "z</span><span class="d">Yours. <b>Capital appends</b>: "ayy then "Ayy collects scattered lines in order</span></div>
+        <div class="row"><span class="k">"+ "*</span><span class="d">System clipboard / X11 primary. Same thing on macOS and Windows</span></div>
+        <div class="row"><span class="k">"% ". ": "/</span><span class="d">Filename, last inserted text, last : command, last search pattern</span></div>
+        <div class="row"><span class="k">"=</span><span class="d">Expression. <code>"=strftime("%Y-%m-%d")</code> then Enter then p</span></div>
+        <div class="row"><span class="k">:reg</span><span class="d">Show them all, with a type column: l, c or b</span></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Paste</h2>
+      <p class="sub">A register stores text <b>and</b> a shape. That's why a yy'd line always lands as a new line.</p>
+      <div class="rows">
+        <div class="row"><span class="k">p P</span><span class="d">After / before the cursor, or below / above the line if the register is linewise</span></div>
+        <div class="row"><span class="k">yyp yyP</span><span class="d">Duplicate the current line below / above</span></div>
+        <div class="row"><span class="k">]p [p</span><span class="d">Paste linewise, reindenting to match the current line</span></div>
+        <div class="row"><span class="k">gp</span><span class="d">Paste and leave the cursor after it, so gp gp gp stacks copies</span></div>
+        <div class="row"><span class="k">v then P</span><span class="d">Replace a selection <b>without</b> clobbering the register, so it repeats. Use P, never p</span></div>
+        <div class="row"><span class="k">Ctrl-r 0</span><span class="d">Paste a register from inside insert mode</span></div>
+        <div class="row"><span class="k">Ctrl-r Ctrl-w</span><span class="d">On the command line, inserts the word under the cursor. Stops you retyping identifiers</span></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>The two rules</h2>
+      <p class="sub">Every noun carries both. Together they explain why dw, de and dj all behave differently.</p>
+      <div class="rows">
+        <div class="row"><span class="k">linewise</span><span class="d"><b>j k G gg H M L</b> and any doubled operator. Whole lines, column discarded</span></div>
+        <div class="row"><span class="k">characterwise</span><span class="d">Everything horizontal: w e f $ % /</span></div>
+        <div class="row"><span class="k">exclusive</span><span class="d">Stops before the character it lands on: <b>w b 0 ^ &#123; &#125; / ?</b></span></div>
+        <div class="row"><span class="k">inclusive</span><span class="d">Takes it: <b>e ge f F t T $ %</b></span></div>
+        <div class="row"><span class="k">:help w</span><span class="d">Prints the word "exclusive" in the entry. Look it up rather than memorise the list</span></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Deliberate exceptions</h2>
+      <p class="sub">Documented, not bugs. Knowing they exist stops you doubting the grammar.</p>
+      <div class="rows">
+        <div class="row"><span class="k">cw</span><span class="d">Acts like <b>ce</b> on a word, so you don't retype the space you just ate. dw keeps the original behaviour</span></div>
+        <div class="row"><span class="k">dw</span><span class="d">On the last word of a line, stops at the line end instead of joining the next</span></div>
+        <div class="row"><span class="k">. after v</span><span class="d">Repeats the <b>size</b>, not the meaning: same line count. dap repeats the intention</span></div>
+        <div class="row"><span class="k">i( vs i"</span><span class="d">Quote objects seek forward on the line. Bracket objects don't seek at all</span></div>
+        <div class="row"><span class="k">d&#125;</span><span class="d">From at-or-before the first non-blank, the exclusive motion is promoted to linewise</span></div>
+        <div class="row"><span class="k">&#125;</span><span class="d">A "blank" line with whitespace on it is not a paragraph boundary. <code>:set list</code> to see</span></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Prefix keys</h2>
+      <p class="sub">g is a namespace, not an operator. Vim ran out of keys and opened a second page of the keyboard.</p>
+      <div class="rows">
+        <div class="row"><span class="k">g z Ctrl-w [ ]</span><span class="d">The five shelves. Pressing one alone does nothing; it waits</span></div>
+        <div class="row"><span class="k t1">gu gU g~ gq gc</span><span class="d">Operators living on the g shelf</span></div>
+        <div class="row"><span class="k t2">gg ge g_ g* gj gk</span><span class="d">Motions. gj and gk move by <b>display</b> line, which matters in wrapped text</span></div>
+        <div class="row"><span class="k">gv gi gf gx gJ</span><span class="d">Neither: reselect, resume insert, open file under cursor, open URL, join without space</span></div>
+        <div class="row"><span class="k">grn grr gra</span><span class="d">LSP actions in recent neovim. If gr does something odd, that's why</span></div>
+        <div class="row"><span class="k">:help g</span><span class="d">The full index for a shelf. Also <code>:help z</code>, <code>:help CTRL-W</code></span></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Neovim vs vim</h2>
+      <p class="sub">Everything above is identical in both. These are the differences you'll actually notice.</p>
+      <div class="rows">
+        <div class="row"><span class="k">Config</span><span class="d">Lua in <code>init.lua</code>. Neovim still reads vimscript</span></div>
+        <div class="row"><span class="k">Defaults</span><span class="d">hlsearch, incsearch, matchit and a mode-shaped cursor all on. Vim leaves them off</span></div>
+        <div class="row"><span class="k">gc</span><span class="d">Comment operator built in since 0.10</span></div>
+        <div class="row"><span class="k">Y</span><span class="d">Mapped to y$, finally matching D and C. Some distributions map it back</span></div>
+        <div class="row"><span class="k">Paste</span><span class="d">Bracketed paste is handled natively, so <code>:set paste</code> is unnecessary and deprecated</span></div>
+        <div class="row"><span class="k">Clipboard</span><span class="d">Needs an external provider. <code>:checkhealth clipboard</code> says which. Vim needs it <b>compiled in</b>: <code>:echo has('clipboard')</code></span></div>
+        <div class="row"><span class="k">SSH</span><span class="d">OSC 52 since 0.10, so "+y can reach your laptop's clipboard from a remote box</span></div>
+        <div class="row"><span class="k">Objects</span><span class="d">Treesitter adds af, ac, aa for functions, classes and arguments. The strongest editing-only argument for neovim</span></div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- ---------- recall ---------- -->
+  <section class="recall measure">
+    <h2>Recall</h2>
+
+    <details>
+      <summary>Why does <code>dw</code> take the trailing space when <code>cw</code> does not?</summary>
+      <div class="answer">
+        <p><code>w</code> is exclusive and lands on the start of the next word, so the space in between falls inside the region.</p>
+        <p><code>cw</code> should behave identically and deliberately does not. It acts like <code>ce</code>, because you are about to type a replacement and would otherwise retype the space. <code>dw</code> keeps the original behaviour, since deleting a word usually should close the gap.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>You delete a five-line function with <code>V4jd</code>. The next one is seven lines. Why does <code>.</code> fail?</summary>
+      <div class="answer">
+        <p>After a visual-mode operation, <code>.</code> repeats the size rather than the meaning: the same number of lines. So it takes five lines of a seven-line function.</p>
+        <p><code>dap</code> instead. A noun names a region rather than measuring one, so the repeat re-evaluates it where the cursor now is.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>You <code>yy</code>, navigate, <code>dd</code>, then <code>p</code>, and the wrong text appears. Name both fixes.</summary>
+      <div class="answer">
+        <p>Yanks and deletes share the unnamed register, so the <code>dd</code> overwrote the <code>yy</code>.</p>
+        <p>After the fact: <code>"0p</code>, since register 0 only ever receives yanks. In advance: <code>"_dd</code>, which throws the delete into the black hole. The first gets used more, because you usually notice too late.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Nobody wrote code implementing <code>&gt;ip</code>. Explain why it works.</summary>
+      <div class="answer">
+        <p><code>&gt;</code> enters operator-pending mode, a real mode whose only job is to wait for something that answers "which region". <code>ip</code> answers it.</p>
+        <p>Because the halves are independent, one new text object gains every operator at once. That is why a plugin defining <code>af</code> immediately gives you <code>daf</code>, <code>yaf</code>, <code>caf</code> and <code>gcaf</code>.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary><code>i</code> appears twice with unrelated meanings. Why is that not a conflict?</summary>
+      <div class="answer">
+        <p>Meaning is resolved by mode. In normal mode <code>i</code> starts insert; after an operator it means "inner" and waits for an object.</p>
+        <p>Giving up the guarantee that a key does one fixed thing is exactly what lets fifty keys carry hundreds of meanings. It is also why <code>Esc</code> is the right reflex when confused: it puts you in a known state.</p>
+      </div>
+    </details>
+  </section>
+
 </div>
 
 <footer>
@@ -406,360 +539,169 @@ footer a { color: var(--c2); }
 (function () {
   "use strict";
 
-  var LINES = [
-    'def load_events(spark, path, table):',
-    '    df = spark.read.parquet(path)',
-    '    df = df.filter(df.status == "active")',
-    '    return df.write.mode("append").saveAsTable(table)',
-    '',
-    'def load_users(spark, path):',
-    '    return spark.read.json(path)'
-  ];
-
-  var text = LINES.join('\n');
-  var N = text.length;
-  var lineStart = [];
-  (function () { var acc = 0; for (var i = 0; i < LINES.length; i++) { lineStart.push(acc); acc += LINES[i].length + 1; } })();
-
-  function lineOf(p) { var l = 0; while (l + 1 < LINES.length && lineStart[l + 1] <= p) l++; return l; }
-  function colOf(p) { return p - lineStart[lineOf(p)]; }
-  function lineEnd(l) { return LINES[l].length ? lineStart[l] + LINES[l].length - 1 : -1; }
-  function cls(ch) {
-    if (ch === undefined) return -1;
-    if (ch === '\n' || /\s/.test(ch)) return 0;
-    if (/[A-Za-z0-9_]/.test(ch)) return 2;
-    return 1;
-  }
-  function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-
-  /* ---------- motions ---------- */
-
-  function mw(p) {
-    var q = p, c0 = cls(text[q]);
-    if (c0 > 0) { while (q < N && cls(text[q]) === c0) q++; }
-    while (q < N && cls(text[q]) === 0) q++;
-    if (q <= p) return { err: 'Nowhere further to go.' };
-    var e = q - 1, l0 = lineOf(p), note = 'Exclusive: stops before the character it lands on, so the space goes with the word.';
-    if (text[e] === '\n' || lineOf(e) > l0) {
-      var le = lineEnd(l0);
-      if (le < p) return { err: 'Nothing left on this line.' };
-      e = le;
-      note = 'w would cross the line break here. Used with an operator, vim stops at the end of the line instead. Documented exception.';
-    }
-    return { kind: 'char', s: p, e: e, note: note };
-  }
-
-  function me(p) {
-    var q = p + 1;
-    while (q < N && cls(text[q]) === 0) q++;
-    if (q >= N) return { err: 'No word end ahead.' };
-    var c = cls(text[q]);
-    while (q + 1 < N && cls(text[q + 1]) === c) q++;
-    return { kind: 'char', s: p, e: q, note: 'Inclusive: takes the character it lands on. Compare with w on the same cursor.' };
-  }
-
-  function mdollar(p) {
-    var l = lineOf(p), e = lineEnd(l);
-    if (e < 0 || e < p) return { err: 'Already at the end of the line.' };
-    return { kind: 'char', s: p, e: e, note: 'Inclusive, and it will take trailing whitespace with it. g_ stops at the last non-blank.' };
-  }
-
-  function mf(p) {
-    var l = lineOf(p), le = lineEnd(l);
-    for (var i = p + 1; i <= le; i++) {
-      if (text[i] === '(') return { kind: 'char', s: p, e: i, note: 'Inclusive: f lands on the character and takes it. t( would stop one short, leaving the paren.' };
-    }
-    return { err: 'No ( later on this line. f and t never cross a line break.' };
-  }
-
-  function mbrace(p) {
-    var l0 = lineOf(p), l = l0 + 1;
-    while (l < LINES.length && LINES[l].trim() !== '') l++;
-    var endLine = l - 1;
-    var fnb = LINES[l0].search(/\S/), col = p - lineStart[l0];
-    if (fnb === -1 || col <= fnb) {
-      return { kind: 'line', sl: l0, el: endLine, note: '} is exclusive and ends in column 1, and the cursor sat at or before the first non-blank. Vim promotes the motion to linewise.' };
-    }
-    return { kind: 'char', s: p, e: lineEnd(endLine), note: 'Exclusive: runs to the end of the last line before the blank one. Move to the indent and it becomes linewise instead.' };
-  }
-
-  function mj(p) {
-    var l = lineOf(p);
-    var t = l + 1;
-    if (t >= LINES.length) return { err: 'No line below.' };
-    return { kind: 'line', sl: l, el: t, note: 'j is linewise, so the column is discarded and two whole lines go. This is why dj can never delete "a bit downward".' };
-  }
-
-  /* ---------- text objects ---------- */
-
-  function word(around, p) {
-    var c = cls(text[p]);
-    if (c < 0) return { err: 'Nothing under the cursor.' };
-    var s = p, e = p;
-    while (s - 1 >= 0 && text[s - 1] !== '\n' && cls(text[s - 1]) === c) s--;
-    while (e + 1 < N && text[e + 1] !== '\n' && cls(text[e + 1]) === c) e++;
-    if (!around) return { kind: 'char', s: s, e: e, note: 'iw is the word alone. Note it does not move with the cursor inside the word, which is what makes ciw repeatable with the dot.' };
-    var e2 = e;
-    while (e2 + 1 < N && text[e2 + 1] !== '\n' && cls(text[e2 + 1]) === 0) e2++;
-    if (e2 > e) return { kind: 'char', s: s, e: e2, note: 'aw adds the trailing whitespace so the gap closes on delete.' };
-    var s2 = s;
-    while (s2 - 1 >= 0 && text[s2 - 1] !== '\n' && cls(text[s2 - 1]) === 0) s2--;
-    return { kind: 'char', s: s2, e: e, note: 'No trailing whitespace here, so aw takes the leading whitespace instead.' };
-  }
-
-  function paren(around, p) {
-    var open = -1, i, d = 0;
-    if (text[p] === '(') open = p;
-    else {
-      var from = text[p] === ')' ? p - 1 : p;
-      for (i = from; i >= 0; i--) {
-        if (text[i] === ')') d++;
-        else if (text[i] === '(') { if (d === 0) { open = i; break; } d--; }
-      }
-    }
-    if (open < 0) return { err: 'The cursor is not inside a ( ) pair, and bracket objects do not search forward. Quote objects do. Get inside first, often with f( or %.' };
-    d = 0; var close = -1;
-    for (i = open; i < N; i++) {
-      if (text[i] === '(') d++;
-      else if (text[i] === ')') { d--; if (d === 0) { close = i; break; } }
-    }
-    if (close < 0) return { err: 'Unmatched (.' };
-    if (around) return { kind: 'char', s: open, e: close, note: 'a( includes both parens. Vim always takes the innermost enclosing pair; 2i( goes up one level.' };
-    if (close - 1 < open + 1) return { kind: 'empty', at: open + 1, note: 'Empty pair, so i( selects nothing.' };
-    return { kind: 'char', s: open + 1, e: close - 1, note: 'i( is the contents only, and unlike the quote objects it works across lines.' };
-  }
-
-  function quote(around, p) {
-    var l = lineOf(p), ls = lineStart[l], line = LINES[l], col = p - ls;
-    var q = [], k;
-    for (var i = 0; i < line.length; i++) if (line[i] === '"') q.push(i);
-    var a = -1, b = -1, seek = false;
-    for (k = 0; k + 1 < q.length; k += 2) { if (col >= q[k] && col <= q[k + 1]) { a = q[k]; b = q[k + 1]; break; } }
-    if (a < 0) { for (k = 0; k + 1 < q.length; k += 2) { if (q[k] > col) { a = q[k]; b = q[k + 1]; seek = true; break; } } }
-    if (a < 0) return { err: 'No quoted string at or after the cursor on this line. Quote objects seek forward, but never across a line break.' };
-    var note = (seek ? 'The cursor was outside the string, and the quote object sought forward on the line. The bracket objects will not do this. ' : '') + (around ? 'a" includes the quotes.' : 'i" is the contents only.');
-    if (around) return { kind: 'char', s: ls + a, e: ls + b, note: note };
-    if (b - 1 < a + 1) return { kind: 'empty', at: ls + a + 1, note: 'Empty string.' };
-    return { kind: 'char', s: ls + a + 1, e: ls + b - 1, note: note };
-  }
-
-  function para(around, p) {
-    var l0 = lineOf(p), sl = l0, el = l0;
-    while (sl - 1 >= 0 && LINES[sl - 1].trim() !== '') sl--;
-    while (el + 1 < LINES.length && LINES[el + 1].trim() !== '') el++;
-    if (!around) return { kind: 'line', sl: sl, el: el, note: 'ip is the block of non-blank lines. Linewise, so the cursor column is irrelevant.' };
-    var e2 = el;
-    while (e2 + 1 < LINES.length && LINES[e2 + 1].trim() === '') e2++;
-    if (e2 > el) return { kind: 'line', sl: sl, el: e2, note: 'ap adds the blank line after, so deleting leaves the file correctly spaced. dip would leave a doubled gap.' };
-    var s2 = sl;
-    while (s2 - 1 >= 0 && LINES[s2 - 1].trim() === '') s2--;
-    return { kind: 'line', sl: s2, el: el, note: 'No blank line after, so ap takes the one before instead.' };
-  }
-
-  /* ---------- tables ---------- */
+  /* ---------- grammar strip ---------- */
 
   var OPS = [
-    { key: 'd', desc: 'delete' },
-    { key: 'c', desc: 'change' },
-    { key: 'y', desc: 'yank' },
-    { key: '>', desc: 'indent' },
-    { key: 'gu', desc: 'lowercase' }
+    { k: 'd',  v: 'delete' },
+    { k: 'c',  v: 'change' },
+    { k: 'y',  v: 'yank' },
+    { k: '>',  v: 'indent' },
+    { k: '=',  v: 'reindent' },
+    { k: 'gu', v: 'lowercase' },
+    { k: 'gc', v: 'comment out' },
+    { k: '!',  v: 'pipe through a shell command' }
   ];
 
   var MOTIONS = [
-    { key: 'w', fn: mw }, { key: 'e', fn: me }, { key: '$', fn: mdollar },
-    { key: 'f(', fn: mf }, { key: '}', fn: mbrace }, { key: 'j', fn: mj }
+    { k: 'w',   m: 'to the start of the next word' },
+    { k: 'e',   m: 'to the end of this word' },
+    { k: '$',   m: 'to the end of the line' },
+    { k: 'f(',  m: 'up to and including the next (' },
+    { k: 't(',  m: 'up to but not including the next (' },
+    { k: '}',   m: 'to the next blank line' },
+    { k: 'j',   m: 'this line and the one below', line: true }
   ];
 
   var OBJECTS = [
-    { key: 'iw', fn: function (p) { return word(false, p); } },
-    { key: 'aw', fn: function (p) { return word(true, p); } },
-    { key: 'i(', fn: function (p) { return paren(false, p); } },
-    { key: 'a(', fn: function (p) { return paren(true, p); } },
-    { key: 'i"', fn: function (p) { return quote(false, p); } },
-    { key: 'ap', fn: function (p) { return para(true, p); } }
+    { k: 'iw',  m: 'this word' },
+    { k: 'aw',  m: 'this word and its trailing space' },
+    { k: 'i(',  m: "what's inside these parens" },
+    { k: 'a(',  m: 'these parens and their contents' },
+    { k: 'i"',  m: "what's inside these quotes" },
+    { k: 'it',  m: "what's inside this tag pair" },
+    { k: 'ip',  m: 'this block of non-blank lines', line: true },
+    { k: 'ap',  m: 'this block and the blank line after it', line: true }
   ];
 
-  /* ---------- operators ---------- */
+  var NOTES = {
+    'c|w':  'Exception: cw acts like ce and stops at the end of the word, so you do not have to retype the space.',
+    'd|w':  'Exclusive, so the trailing space goes too. On the last word of a line it stops at the line end rather than joining.',
+    'c|iw': 'The rename you will use most. Position-independent, so n then . repeats it correctly down the file.',
+    'd|iw': 'Leaves a double space behind. daw closes the gap.',
+    'd|ip': 'Leaves a doubled blank line. dap is almost always the one you want.',
+    'd|j':  'Linewise, so two whole lines go regardless of your column. dj can never delete "a bit downward".',
+    'd|$':  'Same as D.',
+    'c|$':  'Same as C.',
+    'd|f(': 'f is inclusive so the paren goes as well. dt( leaves it, which is the entire reason t exists.',
+    'c|t(': 'Change everything up to the paren and leave the paren alone. The classic use of t.',
+    'd|}':  'From at or before the first non-blank this is promoted to linewise, and the blank line survives.',
+    'y|ap': 'The buffer is unchanged. The text lands in the unnamed register and in register 0.'
+  };
 
-  function touched(r) {
-    if (r.kind === 'line') return [r.sl, r.el];
-    if (r.kind === 'empty') return [lineOf(r.at), lineOf(r.at)];
-    return [lineOf(r.s), lineOf(r.e)];
+  var op = 'd', noun = 'ap';
+
+  function findNoun(k) {
+    var i;
+    for (i = 0; i < MOTIONS.length; i++) if (MOTIONS[i].k === k) return { d: MOTIONS[i], fam: 'motion' };
+    for (i = 0; i < OBJECTS.length; i++) if (OBJECTS[i].k === k) return { d: OBJECTS[i], fam: 'object' };
+    return null;
   }
-  function regionText(r) {
-    if (r.kind === 'line') return LINES.slice(r.sl, r.el + 1).join('\n') + '\n';
-    if (r.kind === 'empty') return '';
-    return text.slice(r.s, r.e + 1);
-  }
-  function flatIndex(lines, l, c) { var acc = 0; for (var i = 0; i < l; i++) acc += lines[i].length + 1; return acc + c; }
+  function findOp(k) { for (var i = 0; i < OPS.length; i++) if (OPS[i].k === k) return OPS[i]; return null; }
+  function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
-  function apply(op, r) {
-    var out = { lines: LINES.slice(), yank: null, ytype: null, mark: null, opnote: '' };
-    var t = touched(r), l;
-
-    if (op === 'y') {
-      out.yank = regionText(r);
-      out.ytype = r.kind === 'line' ? 'l' : 'c';
-      out.opnote = 'The buffer is unchanged. The text went to the unnamed register and to register 0, which only yanks ever write to.';
-      return out;
-    }
-    if (op === '>') {
-      for (l = t[0]; l <= t[1]; l++) if (out.lines[l] !== '') out.lines[l] = '    ' + out.lines[l];
-      out.opnote = '> is always linewise. It shifts every line the noun touched, however narrow the region was.';
-      return out;
-    }
-    if (op === 'gu') {
-      if (r.kind === 'line') { for (l = t[0]; l <= t[1]; l++) out.lines[l] = out.lines[l].toLowerCase(); }
-      else if (r.kind === 'char') {
-        out.lines = (text.slice(0, r.s) + text.slice(r.s, r.e + 1).toLowerCase() + text.slice(r.e + 1)).split('\n');
-      }
-      out.opnote = 'gu is an operator that lives on the g prefix. guu lowercases a line, because the last letter is what doubles.';
-      return out;
-    }
-    if (r.kind === 'empty') { if (op === 'c') out.mark = r.at; return out; }
-    if (r.kind === 'line') {
-      var indent = (LINES[r.sl].match(/^\s*/) || [''])[0];
-      if (op === 'd') { out.lines.splice(r.sl, r.el - r.sl + 1); }
-      else {
-        out.lines.splice(r.sl, r.el - r.sl + 1, indent);
-        out.mark = flatIndex(out.lines, r.sl, indent.length);
-        out.opnote = 'A linewise change leaves one empty line at the original indent and drops you into insert mode on it.';
-      }
-      return out;
-    }
-    out.lines = (text.slice(0, r.s) + text.slice(r.e + 1)).split('\n');
-    if (op === 'c') out.mark = r.s;
-    return out;
-  }
-
-  /* ---------- state ---------- */
-
-  var cursor = text.indexOf('status') + 2;
-  var op = 'd';
-  var noun = 'i(';
-
-  var elOps = document.getElementById('ops');
-  var elMots = document.getElementById('mots');
-  var elObjs = document.getElementById('objs');
-  var elCmd = document.getElementById('cmd');
-  var elMeta = document.getElementById('cmdmeta');
-  var elNote = document.getElementById('cmdnote');
-  var elBuf = document.getElementById('buf');
-  var elRes = document.getElementById('res');
-  var elResHead = document.getElementById('reshead');
-  var elResTag = document.getElementById('restag');
-  var elPosTag = document.getElementById('postag');
-
-  function mkBtn(key, klass, group) {
+  function chip(k, cls, group) {
     var b = document.createElement('button');
-    b.className = 'btn ' + klass;
     b.type = 'button';
-    b.textContent = key;
+    b.className = 'chip ' + cls;
+    b.textContent = k;
     b.setAttribute('aria-pressed', 'false');
     b.addEventListener('click', function () {
-      if (group === 'op') op = key; else noun = key;
-      render();
+      if (group === 'op') op = k; else noun = k;
+      paint();
     });
     return b;
   }
 
-  OPS.forEach(function (o) { elOps.appendChild(mkBtn(o.key, 'o1', 'op')); });
-  MOTIONS.forEach(function (m) { elMots.appendChild(mkBtn(m.key, 'o2', 'noun')); });
-  OBJECTS.forEach(function (o) { elObjs.appendChild(mkBtn(o.key, 'o3', 'noun')); });
+  var elOps = document.getElementById('ops');
+  var elMots = document.getElementById('mots');
+  var elObjs = document.getElementById('objs');
+  var elCmd = document.getElementById('gcmd');
+  var elRead = document.getElementById('gread');
+  var elNote = document.getElementById('gnote');
 
-  function findNoun(k) {
-    var i;
-    for (i = 0; i < MOTIONS.length; i++) if (MOTIONS[i].key === k) return { def: MOTIONS[i], family: 'motion' };
-    for (i = 0; i < OBJECTS.length; i++) if (OBJECTS[i].key === k) return { def: OBJECTS[i], family: 'object' };
-    return null;
-  }
+  OPS.forEach(function (o) { elOps.appendChild(chip(o.k, 'c1chip', 'op')); });
+  MOTIONS.forEach(function (m) { elMots.appendChild(chip(m.k, 'c2chip', 'n')); });
+  OBJECTS.forEach(function (o) { elObjs.appendChild(chip(o.k, 'c3chip', 'n')); });
 
-  function render() {
-    var found = findNoun(noun);
-    var klass = found.family === 'motion' ? 'k2' : 'k3';
-    var pclass = found.family === 'motion' ? 'p2' : 'p3';
-    var r = found.def.fn(cursor);
+  function paint() {
+    var o = findOp(op), n = findNoun(noun);
+    var bcls = n.fam === 'motion' ? 'b2' : 'b3';
 
-    Array.prototype.forEach.call(document.querySelectorAll('.btn'), function (b) {
+    Array.prototype.forEach.call(document.querySelectorAll('.chip'), function (b) {
       b.setAttribute('aria-pressed', String(b.textContent === op || b.textContent === noun));
     });
 
-    elCmd.innerHTML = '<span class="p1">' + esc(op) + '</span><span class="' + pclass + '">' + esc(noun) + '</span>';
-    elPosTag.textContent = 'line ' + (lineOf(cursor) + 1) + ', col ' + (colOf(cursor) + 1);
+    elCmd.innerHTML = '<span class="a">' + esc(op) + '</span><span class="' + bcls + '">' + esc(noun) + '</span>';
+    elRead.textContent = o.v + ' ' + n.d.m;
 
-    if (r.err) {
-      elMeta.textContent = 'no region';
-      elNote.className = 'cmdnote bad';
-      elNote.textContent = r.err;
-      elBuf.innerHTML = drawBuf(null, klass);
-      elResHead.textContent = 'After';
-      elResTag.textContent = '';
-      elRes.innerHTML = '<div class="bl">nothing happens</div>';
+    var parts = [];
+    parts.push(n.fam === 'motion'
+      ? 'Motion: travel from the cursor, so what it covers depends on where the cursor sits.'
+      : 'Text object: a region containing the cursor. Anywhere inside gives the same result.');
+    if (n.d.line) parts.push('Linewise.');
+    if (op === '>' || op === '=' || op === 'gc') parts.push(op + ' is always linewise: it acts on every line the noun touched, however narrow the region.');
+    if (op === 'y') parts.push('Also writes register 0, which only yanks ever touch.');
+    var extra = NOTES[op + '|' + noun];
+    if (extra) parts.push(extra);
+    elNote.textContent = parts.join(' ');
+  }
+
+  paint();
+
+  /* ---------- filter ---------- */
+
+  var input = document.getElementById('filter');
+  var hits = document.getElementById('hits');
+  var cards = Array.prototype.slice.call(document.querySelectorAll('.card'));
+  var rows = Array.prototype.slice.call(document.querySelectorAll('.row'));
+
+  rows.forEach(function (r) { r.dataset.s = r.textContent.toLowerCase().replace(/\s+/g, ' '); });
+  cards.forEach(function (c) {
+    var h = c.querySelector('h2'), s = c.querySelector('.sub');
+    c.dataset.s = (h ? h.textContent : '') + ' ' + (s ? s.textContent : '');
+    c.dataset.s = c.dataset.s.toLowerCase();
+  });
+
+  var total = rows.length;
+
+  function filter() {
+    var q = input.value.trim().toLowerCase();
+    if (!q) {
+      rows.forEach(function (r) { r.classList.remove('hide'); });
+      cards.forEach(function (c) { c.classList.remove('hide'); });
+      hits.textContent = total + ' entries';
       return;
     }
-
-    var typeName = r.kind === 'line' ? 'linewise' : (r.kind === 'empty' ? 'empty region' : 'characterwise');
-    var out = apply(op, r);
-    elMeta.textContent = typeName;
-    elNote.className = 'cmdnote';
-    elNote.textContent = r.note + (out.opnote ? ' ' + out.opnote : '');
-
-    elBuf.innerHTML = drawBuf(r, klass);
-
-    if (out.yank !== null) {
-      elResHead.textContent = 'Register "" and "0';
-      elResTag.textContent = 'type ' + out.ytype;
-      elRes.innerHTML = out.yank.replace(/\n$/, '').split('\n').map(function (ln) {
-        return '<div class="bl">' + esc(ln) + '</div>';
-      }).join('') || '<div class="bl">(empty)</div>';
-    } else {
-      elResHead.textContent = 'After';
-      elResTag.textContent = out.mark !== null ? 'insert mode' : '';
-      var s = out.lines.join('\n');
-      if (out.mark !== null) s = s.slice(0, out.mark) + '\u0001' + s.slice(out.mark);
-      elRes.innerHTML = s.split('\n').map(function (ln) {
-        return '<div class="bl">' + esc(ln).replace('\u0001', '<span class="caret">\u258F</span>') + '</div>';
-      }).join('');
-    }
+    var shown = 0;
+    cards.forEach(function (c) {
+      var cardHit = c.dataset.s.indexOf(q) !== -1;
+      var any = false;
+      Array.prototype.forEach.call(c.querySelectorAll('.row'), function (r) {
+        var hit = cardHit || r.dataset.s.indexOf(q) !== -1;
+        r.classList.toggle('hide', !hit);
+        if (hit) { any = true; shown++; }
+      });
+      c.classList.toggle('hide', !any);
+    });
+    hits.textContent = shown + ' of ' + total + ' entries';
   }
 
-  function drawBuf(r, klass) {
-    var html = '', l, c, p, cl;
-    for (l = 0; l < LINES.length; l++) {
-      var lineSel = r && r.kind === 'line' && l >= r.sl && l <= r.el;
-      html += '<div class="bl' + (lineSel ? ' lsel ' + klass : '') + '">';
-      for (c = 0; c < LINES[l].length; c++) {
-        p = lineStart[l] + c;
-        cl = '';
-        if (r && r.kind === 'char' && p >= r.s && p <= r.e) cl += ' sel ' + klass;
-        if (p === cursor) cl += ' cur';
-        html += '<span class="ch' + cl + '" data-p="' + p + '">' + esc(LINES[l][c]) + '</span>';
-      }
-      html += '</div>';
+  input.addEventListener('input', filter);
+  input.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { input.value = ''; filter(); input.blur(); }
+  });
+
+  document.addEventListener('keydown', function (e) {
+    var t = e.target, tag = t && t.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+    if (e.key === '/' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      e.preventDefault();
+      input.focus();
+      input.select();
     }
-    return html;
-  }
-
-  elBuf.addEventListener('click', function (ev) {
-    var t = ev.target;
-    if (t && t.dataset && t.dataset.p !== undefined) { cursor = +t.dataset.p; render(); }
   });
 
-  elBuf.addEventListener('keydown', function (ev) {
-    var k = ev.key, l = lineOf(cursor), c = colOf(cursor), moved = true, t, col;
-    if (k === 'h' || k === 'ArrowLeft') { if (c > 0) cursor--; }
-    else if (k === 'l' || k === 'ArrowRight') { if (c < LINES[l].length - 1) cursor++; }
-    else if (k === 'j' || k === 'ArrowDown' || k === 'k' || k === 'ArrowUp') {
-      var dir = (k === 'j' || k === 'ArrowDown') ? 1 : -1;
-      t = l + dir;
-      while (t >= 0 && t < LINES.length && LINES[t].length === 0) t += dir;
-      if (t >= 0 && t < LINES.length) { col = Math.min(c, LINES[t].length - 1); cursor = lineStart[t] + col; }
-    } else moved = false;
-    if (moved) { ev.preventDefault(); render(); }
-  });
-
-  render();
+  filter();
 })();
 </script>
 </body>
