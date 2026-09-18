@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>{{TITLE}}</title>
+<meta name="description" content="{{SUMMARY}}">
+
+<meta property="og:title" content="{{TITLE}}">
+<meta property="og:description" content="{{SUMMARY}}">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://dinith-heshan.github.io/learn/concepts/{{SLUG}}/">
+<meta property="og:image" content="https://dinith-heshan.github.io/learn/assets/og-default.png">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%2312585d'/><rect x='7' y='13' width='18' height='2.6' rx='1.3' fill='%23faf8f3'/><rect x='7' y='19' width='11' height='2.6' rx='1.3' fill='%23faf8f3' opacity='.55'/></svg>">
+
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   FONTS — self-hosted IBM Plex, OFL 1.1
+
+   Two sources per face. The relative path resolves on the live
+   site and in a downloaded copy of the folder. The absolute URL
+   is a fallback for contexts with no repo around the file, such
+   as an artifact preview. Live, the first source always wins and
+   the second is never fetched.
+   ═══════════════════════════════════════════════════════════════ */
+
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-style: normal;
+  font-weight: 100 700;              /* variable axis, verified via fvar */
+  font-display: swap;
+  src: url('../../assets/fonts/plex-sans-latin-wght-normal.woff2') format('woff2'),
+       url('https://dinith-heshan.github.io/learn/assets/fonts/plex-sans-latin-wght-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-style: italic;
+  font-weight: 100 700;
+  font-display: swap;
+  src: url('../../assets/fonts/plex-sans-latin-wght-italic.woff2') format('woff2'),
+       url('https://dinith-heshan.github.io/learn/assets/fonts/plex-sans-latin-wght-italic.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../../assets/fonts/plex-mono-latin-400.woff2') format('woff2'),
+       url('https://dinith-heshan.github.io/learn/assets/fonts/plex-mono-latin-400.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('../../assets/fonts/plex-mono-latin-600.woff2') format('woff2'),
+       url('https://dinith-heshan.github.io/learn/assets/fonts/plex-mono-latin-600.woff2') format('woff2');
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TOKENS — locked. No page adds a value here.
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── ground ─────────────────────────────────────────────────
+     Two surfaces only. --panel is one 1.08 step lighter than
+     --bg, so a panel reads as raised without a shadow.
+     Never invert them. Never add a third.                      */
+  --bg:        #f4efe4;   /* page canvas */
+  --panel:     #faf8f3;   /* raised: figures, footer, sticky pane */
+  --ink:       #1c1915;
+  --muted:     #5d564a;   /* secondary prose */
+  --faint:     #6f6a60;   /* metadata, labels, placeholders */
+  --rule:      #ddd4c2;
+  --rule-soft: #e9e2d4;
+
+  /* ── semantic ───────────────────────────────────────────────
+     Values fixed; meaning assigned per page. Text of a colour
+     goes on its own tint and nothing else.                     */
+  --c1:    #ad3311;   /* rust   */
+  --c2:    #12585d;   /* teal   — also site chrome: wordmark, favicon, focus */
+  --c3:    #34306b;   /* indigo */
+  --c1-bg: #f6e4d9;
+  --c2-bg: #dcebea;
+  --c3-bg: #e4e2f0;
+
+  /* ── families ───────────────────────────────────────────────
+     Plex Mono is derived from Plex Sans and shares its x-height
+     (0.516em) and cap-height (0.698em) exactly. Inline code sits
+     at 1em; shrinking it would break that alignment.           */
+  --sans: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* ── type scale ─────────────────────────────────────────────
+     Uneven by design. Four roles live below body and need only
+     ~8% steps to stay distinct; three live above and need wide
+     separation.                                                */
+  --t-xs:    12px;   /* diagram ticks, dense annotation */
+  --t-sm:    13px;   /* metadata, axis labels */
+  --t-cap:   14px;   /* captions, legends */
+  --t-body:  16px;   /* prose */
+  --t-lead:  19px;   /* the one-line statement */
+  --t-h3:    19px;
+  --t-h2:    25px;
+  --t-h1:    40px;
+
+  /* ── weights ────────────────────────────────────────────────
+     Three values only. Large sizes are LIGHTER than small ones:
+     size already carries the hierarchy, and stroke weight reads
+     heavier as size grows. This build has no optical-size axis
+     (fvar reports wght alone), so the compensation is manual.
+     This inversion is correct. Do not "fix" it.                */
+  --w-text:  400;   /* body, and the default for everything */
+  --w-head:  500;   /* h1, h2 */
+  --w-emph:  600;   /* h3, strong, captions, labels */
+
+  /* ── line height ────────────────────────────────────────────
+     Scales inversely with size, same reasoning as weight.      */
+  --lh-tight: 1.15;
+  --lh-head:  1.25;
+  --lh-body:  1.55;
+  --lh-small: 1.40;
+
+  /* ── spacing ────────────────────────────────────────────────
+     Multiples of 4. Used asymmetrically: a heading belongs to
+     what is BELOW it, so space above is ~4x space below.       */
+  --s-1:  4px;
+  --s-2:  8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 48px;
+  --s-8: 72px;
+
+  /* ── layout ─────────────────────────────────────────────────
+     --measure is in em, not ch, deliberately. The ch unit is the
+     width of "0" (0.600em in Plex Sans), while the average char
+     in English prose is 0.4441em — so 68ch would be ~92 chars,
+     not 68. Worse, ch is font-FAMILY relative, so it shifts by
+     ~7% when the webfont loads. em is stable and scales with a
+     reader's default size.
+     33em x 16px = 528px = ~74 characters.                      */
+  --measure:  33em;
+  --gutter:   40px;
+  --page-max: 1200px;
+
+  /* Three tiers: measure (528) / page (1200) / bleed (viewport).
+     Grid columns compute from the container's real width, so —
+     unlike the 100vw trick — the scrollbar never causes overflow. */
+  --page-grid:
+    [bleed-start] 1fr
+    [page-start]  min(100% - var(--gutter) * 2, var(--page-max))
+    [page-end]    1fr
+    [bleed-end];
+
+  --ease: cubic-bezier(.32, .72, 0, 1);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   FRAME
+   ═══════════════════════════════════════════════════════════════ */
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: var(--t-body);
+  font-weight: var(--w-text);
+  line-height: var(--lh-body);
+  -webkit-font-smoothing: antialiased;
+  display: grid;
+  grid-template-columns: var(--page-grid);
+  align-content: start;
+}
+
+body > * { grid-column: page; }
+
+/* main repeats the grid so its children get the same three tiers.
+   It spans bleed, so its 100% equals the body's 100% and the
+   columns resolve identically. */
+body > main {
+  grid-column: bleed;
+  display: grid;
+  grid-template-columns: var(--page-grid);
+}
+main > * { grid-column: page; }
+
+/* Class (0,1,0) beats the element selectors above (0,0,1). */
+.bleed   { grid-column: bleed; }
+.measure { max-width: var(--measure); }
+
+h1, h2, h3, h4, h5, h6, p, ul, ol, figure, blockquote, pre { margin: 0; }
+
+h1 { font-size: var(--t-h1); font-weight: var(--w-head); line-height: var(--lh-tight); letter-spacing: -.021em; }
+h2 { font-size: var(--t-h2); font-weight: var(--w-head); line-height: var(--lh-head);  letter-spacing: -.012em; }
+h3 { font-size: var(--t-h3); font-weight: var(--w-emph); line-height: var(--lh-head); }
+
+/* The UA stylesheet sets headings and strong to 700, which the
+   variable font would supply — silently placing them a step above
+   the whole system. These reclaim them. */
+h4, h5, h6 { font-size: var(--t-body); font-weight: var(--w-emph); line-height: var(--lh-head); }
+strong, b { font-weight: var(--w-emph); }
+
+a { color: var(--c2); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+a:hover { text-decoration-thickness: 2px; }
+
+:focus-visible { outline: 2px solid var(--c2); outline-offset: 3px; border-radius: 2px; }
+
+code, kbd, samp { font-family: var(--mono); font-size: 1em; }
+code {
+  background: var(--panel);
+  border: 1px solid var(--rule-soft);
+  border-radius: 3px;
+  padding: .06em .28em;
+}
+pre {
+  font-family: var(--mono);
+  font-size: var(--t-cap);
+  line-height: var(--lh-small);
+  background: var(--panel);
+  border: 1px solid var(--rule-soft);
+  border-radius: 6px;
+  padding: var(--s-5);
+  overflow-x: auto;
+}
+pre code { background: none; border: none; padding: 0; }
+
+/* ── prose rhythm ────────────────────────────────────────────
+   margin-top only, so nothing can margin-collapse and the
+   numbers in the CSS are the numbers on screen. Asymmetric:
+   a heading sits close to the text it introduces and far from
+   what precedes it.                                           */
+.prose > *          { margin-top: var(--s-4); }
+.prose > :first-child { margin-top: 0; }
+.prose > h2         { margin-top: var(--s-7); }
+.prose > h3         { margin-top: var(--s-6); }
+.prose > h2 + *,
+.prose > h3 + *     { margin-top: var(--s-3); }
+
+/* ═══════════════════════════════════════════════════════════════
+   FURNITURE — identical on every page
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── return strip ─── spans page width; everything else sits at
+   measure, but all share the same left edge. */
+.strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+  padding: var(--s-4) 0;
+  border-bottom: 1px solid var(--rule);
+}
+.strip a {
+  display: flex;
+  align-items: center;
+  min-height: 44px;              /* touch target */
+  margin: calc(var(--s-4) * -1) 0;
+  padding: var(--s-4) 0;
+  text-decoration: none;
+  color: var(--ink);
+}
+/* The wordmark is SVG paths, not text: it must not depend on a
+   webfont that may not have loaded. Same reasoning as the favicon. */
+.wordmark { display: block; height: 16px; width: auto; }
+.wordmark .mark  { fill: currentColor; }
+.wordmark .slash { fill: var(--c2); }
+
+.strip time {
+  font-family: var(--mono);
+  font-size: var(--t-sm);
+  color: var(--faint);
+}
+
+/* ── title block ─── */
+.title-block { margin-top: var(--s-8); }
+.title-block .lead {
+  margin-top: var(--s-4);
+  font-size: var(--t-lead);
+  line-height: var(--lh-head);
+  color: var(--muted);
+}
+
+body > main { margin-top: var(--s-8); }
+
+/* ── footer ─── the correction path. No disclaimers anywhere. */
+footer {
+  margin: var(--s-8) 0;
+  padding: var(--s-5);
+  background: var(--panel);
+  border: 1px solid var(--rule-soft);
+  border-radius: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-5);
+  font-size: var(--t-cap);
+  color: var(--muted);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BREAKPOINTS — two, no more
+   ═══════════════════════════════════════════════════════════════ */
+
+/* 900px is NOT a phone. It is a browser window that is not
+   maximised, which on a technical site is the common case.
+   Multi-column page layouts collapse here; a sticky pane
+   un-sticks and drops into its logical place in the reading
+   order. That placement needs thought per page: it is the moment
+   "beside" becomes "before or after". */
+@media (max-width: 900px) {
+  /* page-specific */
+}
+
+/* Body stays at 16px — shrinking it makes reading worse, and it
+   is the threshold below which iOS zooms on input focus. Only
+   the display sizes compress. */
+@media (max-width: 560px) {
+  :root {
+    --gutter: 18px;
+    --t-h1:   28px;
+    --t-h2:   21px;
+    --t-h3:   17px;
+    --t-lead: 17px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+
+<body>
+
+<!-- ════ RETURN STRIP ════ -->
+<div class="strip">
+  <a href="../../" aria-label="learn — back to all concepts">
+    <svg class="wordmark" viewBox="0 -760 3600 898" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true"><g transform="scale(1,-1)"><g class="mark"><path transform="translate(0 0)" d="M68 115H226V625H68V740H374V115H532V0H68Z"/><path transform="translate(600 0)" d="M314 -12Q184 -12 117.0 60.0Q50 132 50 256Q50 319 67.5 369.5Q85 420 117.5 455.5Q150 491 196.5 509.5Q243 528 301 528Q359 528 405.0 509.5Q451 491 483.0 457.0Q515 423 532.5 374.5Q550 326 550 266V222H197V213Q197 163 228.0 132.5Q259 102 319 102Q365 102 398.0 119.5Q431 137 455 166L535 79Q505 42 451.0 15.0Q397 -12 314 -12ZM302 422Q254 422 225.5 392.5Q197 363 197 313V305H405V313Q405 364 377.5 393.0Q350 422 302 422Z"/><path transform="translate(1200 0)" d="M487 0Q441 0 413.0 23.5Q385 47 380 91H375Q361 40 319.5 14.0Q278 -12 218 -12Q143 -12 97.5 28.5Q52 69 52 142Q52 223 111.0 262.0Q170 301 284 301H367V327Q367 373 345.5 396.5Q324 420 273 420Q226 420 197.0 402.0Q168 384 147 355L66 427Q92 471 147.5 499.5Q203 528 290 528Q396 528 455.5 479.5Q515 431 515 333V107H572V0ZM274 85Q313 85 340.0 104.0Q367 123 367 159V221H288Q197 221 197 160V140Q197 113 218.0 99.0Q239 85 274 85Z"/><path transform="translate(1800 0)" d="M74 115H193V401H74V516H341V370H348Q355 398 367.5 424.5Q380 451 399.5 471.5Q419 492 447.0 504.0Q475 516 513 516H562V380H452Q397 380 369.0 347.5Q341 315 341 268V115H511V0H74Z"/><path transform="translate(2400 0)" d="M65 0V516H213V422H219Q228 444 241.0 463.0Q254 482 272.5 496.5Q291 511 315.5 519.5Q340 528 371 528Q408 528 439.0 515.5Q470 503 492.0 478.0Q514 453 526.5 417.0Q539 381 539 334V0H391V314Q391 414 304 414Q287 414 270.5 409.5Q254 405 241.0 395.5Q228 386 220.5 372.0Q213 358 213 339V0Z"/></g><g class="slash"><path transform="translate(3000 0)" d="M73 -138 394 760H527L206 -138Z"/></g></g></svg>
+  </a>
+  <time datetime="{{DATE}}">{{DATE}}</time>
+</div>
+
+<!-- ════ TITLE ════ -->
+<header class="title-block measure">
+  <h1>{{TITLE}}</h1>
+  <p class="lead">{{LEAD}}</p>
+</header>
+
+<!-- ════ BODY ════ ═══════════════════════════════════════════════
+     Deliberately hollow. No default layout ships here, because
+     whatever does becomes the layout of every page.
+
+     Available: .measure caps at 528px, plain children fill the
+     1200px page, .bleed spans the viewport. Compose whatever the
+     concept's shape wants — columns, a sticky pane, stepped
+     panels, margin notes.
+
+     Find what can be manipulated before writing: a parameter, a
+     state machine, a tradeoff curve, a sequence to step through.
+     Build that rather than describe it.
+     ═════════════════════════════════════════════════════════════ -->
+<main>
+  <div class="prose measure">
+    <p>Replace this. The explanation is the bulk of the page.</p>
+
+    <h2>A section</h2>
+    <p>48px above the heading, 12px below it. The heading belongs to
+      this paragraph, not to the gap before it.</p>
+
+    <h3>A subsection</h3>
+    <p>Inline <code>code</code> sits at <code>1em</code> because Plex Mono
+      and Plex Sans share an x-height exactly. A mono string of N
+      characters is always <code>0.6 x N</code> em wide, so live numeric
+      readouts never shift their container.</p>
+  </div>
+</main>
+
+<!-- ════ FOOTER ════ -->
+<footer class="measure">
+  <a href="https://github.com/dinith-heshan/learn/issues/new?title=Correction:%20{{SLUG}}&labels=correction">Suggest a correction</a>
+  <a href="../../">All concepts</a>
+</footer>
+
+</body>
+</html>
